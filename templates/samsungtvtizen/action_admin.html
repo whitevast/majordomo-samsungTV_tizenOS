@@ -1,0 +1,106 @@
+
+<!-- table zwave_devices search -->
+<div>
+<p>
+<a href="?view_mode=edit_samsungtv_devices&data_source=<#DATA_SOURCE#>" class="btn btn-default"><i class="glyphicon glyphicon-plus"></i> <#LANG_ADD#></a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	
+	[#if CYCLERUN==1#]
+		<span class="label label-success" title="Статус цикла">Цикл запущен</span>
+	[#else#]
+		<span class="label label-danger" title="Статус цикла">Цикл остановлен</span>
+	[#endif#]
+  <!--# Кнопка 'Справка'. #-->
+     <a href="?view_mode=show_help" class="btn btn-default btn-sm float-right" title="Справка"><i class="glyphicon glyphicon-question-sign"></i></a>
+</p>
+     
+<!-- [ <a href="#" onClick="$('#api_settings').toggle();return false;"><#LANG_SETUP#></a> ]
+</div>
+<div style="display:none" id='api_settings'>
+&nbsp;
+<form action="?" method="post" enctype="multipart/form-data" name="frmEdit" class="form-horizontal">
+<fieldset>
+<div class="form-group">
+ <label class="control-label"[#if ERR_API_URL#] style="color:red;font-weight:bold"[#endif#]>
+ API URL:
+ (*)
+ </label>
+ <div class="controls"><input type="text" name="api_url" value="[#API_URL#]" class="input"></div>
+</div>
+<div class="form-actions">
+<button type="submit" name="subm" value="Submit" class="btn btn-primary"><#LANG_UPDATE#></button>
+<input type="hidden" name="view_mode" value="update_settings">
+<input type="hidden" name="mode" value="update">
+</div>
+</fieldset>
+</form>
+</div>
+
+
+ <!-- action usual -->
+ [#if DATA_SOURCE="samsungtv_devices" || DATA_SOURCE=""#]
+ <!-- table samsungtv_devices search -->
+ [#if VIEW_MODE="search_samsungtv_devices" || VIEW_MODE=""#]
+  [#inc samsungtv_devices_search_admin.html#]
+ [#endif VIEW_MODE#]
+ 
+ <!--# Справка по модулю. #-->
+[#if VIEW_MODE="show_help"#]
+   [#inc ./help_ru.html#] 
+[#endif#]
+ 
+ <!-- / table samsungtv_devices search -->
+ <!-- table samsungtv_devices edit -->
+ [#if VIEW_MODE="edit_samsungtv_devices"#]
+   [#if ID!=""#]
+   [#if TITLE!=""#]<h4>[#TITLE#]</h4>[#endif TITLE#]
+<ul class="nav nav-tabs">
+  <li[#if TAB=""#] class="active"[#endif#]>
+   <a href="?data_source=<#DATA_SOURCE#>&view_mode=<#VIEW_MODE#>&id=<#ID#>&tab="><#LANG_GENERAL#></a>
+  </li>
+  <li[#if TAB="data"#] class="active"[#endif#]>
+   <a href="?data_source=<#DATA_SOURCE#>&view_mode=<#VIEW_MODE#>&id=<#ID#>&tab=data">Команды</a>
+  </li>
+  <li[#if TAB="apps"#] class="active"[#endif#]>
+   <a href="?data_source=<#DATA_SOURCE#>&view_mode=<#VIEW_MODE#>&id=<#ID#>&tab=apps">Приложения</a>
+  </li>
+</ul>
+&nbsp;<br/>
+   [#endif ID#]
+   [#if TAB=""#]
+    [#inc samsungtv_devices_edit_default.html#]
+   [#endif TAB#]
+   [#if TAB="data"#]
+    [#inc samsungtv_devices_edit_data.html#]
+   [#endif TAB#]
+   [#if TAB="apps"#]
+    [#inc samsungtv_devices_edit_apps.html#]
+   [#endif TAB#]
+ [#endif VIEW_MODE#]
+ <!-- / table samsungtv_devices edit -->
+ <!-- table samsungtv_devices view --> 
+ [#if VIEW_MODE="view_samsungtv_devices"#]
+   [#if TAB=""#]
+    [#inc samsungtv_devices_view_default.html#]
+   [#endif TAB#]
+ [#endif VIEW_MODE#]
+ <!-- / table samsungtv_devices view -->
+ [#endif DATA_SOURCE#]
+ <!-- action usual -->
+ [#if DATA_SOURCE="samsungtv_codes"#]
+ <!-- table samsungtv_codes search -->
+ [#if VIEW_MODE="search_samsungtv_codes" || VIEW_MODE=""#]
+  [#inc samsungtv_codes_search_admin.html#]
+ [#endif VIEW_MODE#]
+ <!-- / table samsungtv_codes search -->
+ <!-- table samsungtv_codes edit -->
+ [#if VIEW_MODE="edit_samsungtv_codes"#]
+   [#inc samsungtv_codes_edit.html#]
+ [#endif VIEW_MODE#]
+ <!-- / table samsungtv_codes edit -->
+ <!-- table samsungtv_codes view --> 
+ [#if VIEW_MODE="view_samsungtv_codes"#]
+   [#inc samsungtv_codes_view.html#]
+ [#endif VIEW_MODE#]
+ <!-- / table samsungtv_codes view -->
+ [#endif DATA_SOURCE#]
+</div>
