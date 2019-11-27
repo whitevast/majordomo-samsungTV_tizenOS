@@ -84,7 +84,7 @@ $sams = new samsung();
 		  $code['VALUE'] = $codes[$i][0];
 		  SQLInsert('samsungtv_codes', $code);
 	  }
-	  
+	  setGlobal('cycle_samsungtvtizenControl','start');
     }
     $out['OK']=1;
    } else {
