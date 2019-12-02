@@ -313,11 +313,13 @@ function usual(&$out) {
 							}
 							
 						}
-				}elseif($key['VALUE'] == "KEY_POWER"){
+				}
+				elseif($key['VALUE'] == "KEY_POWER"){
 					$status = SQLSelectOne('SELECT ONLINE FROM samsungtv_devices WHERE ID ="'.(int)$key['DEVICE_ID'].'"');
-					debmes($status['ONLINE']);
-					debmes($value);
-					If(($value and !$status['ONLINE']) or (!$value and $status['ONLINE'])) $sams->sendkey($key['DEVICE_ID'], $key['VALUE']);
+					if(($value and !$status['ONLINE']) or (!$value and $status['ONLINE'])) $sams->sendkey($key['DEVICE_ID'], $key['VALUE']);
+				}
+				elseif($key['VALUE'] == "KEY_SETVOL"){
+					$sams->setvol($key['DEVICE_ID'], $value);
 				}
 				else{
 					if($key['VALUE'] == "KEY_CH"){
