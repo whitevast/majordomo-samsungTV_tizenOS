@@ -193,8 +193,6 @@ $sams = new samsung();
       $appsdata[$i]['LINKED_OBJECT']=trim(${'linked_object'.$appsdata[$i]['ID']});
       global ${'linked_property'.$appsdata[$i]['ID']};
       $appsdata[$i]['LINKED_PROPERTY']=trim(${'linked_property'.$appsdata[$i]['ID']});
-      global ${'linked_method'.$appsdata[$i]['ID']};
-      $appsdata[$i]['LINKED_METHOD']=trim(${'linked_method'.$appsdata[$i]['ID']});
       SQLUpdate('samsungtv_apps', $appsdata[$i]);
       if ($old_linked_object && $old_linked_object!=$appsdata[$i]['LINKED_OBJECT'] && $old_linked_property && $old_linked_property!=$appsdata[$i]['LINKED_PROPERTY']) {
        removeLinkedProperty($old_linked_object, $old_linked_property, $this->name);

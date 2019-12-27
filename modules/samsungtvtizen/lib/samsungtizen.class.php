@@ -40,7 +40,7 @@ class samsung{
 		$socket = $this->connecttv($device["IP"], $device["TOKEN"]);
 		if(!$socket){
 			if($key == "KEY_POWER") {
-				$wol = $this->wol($device["IP"], $device["MAC"]);
+				$wol = $this->wol($device["MAC"]);
 				return $wol;
 			}
 			return false;
@@ -75,18 +75,15 @@ class samsung{
 		return $html;
 	}
 
-	function wol($ip, $mac){
+	function wol($mac){
 		$macAddressHexadecimal = str_replace([':', '-'], '', $mac);
 		$macAddressBinary = pack('H12', $macAddressHexadecimal);
 		$magicPacket = str_repeat(chr(0xff), 6).str_repeat($macAddressBinary, 16);
-		$broadcast = explode('.', $ip);
-		$broadcast[3] = "255";
-		$broadcast = implode('.', $broadcast);
 		$sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
 		if ($sock !== false) {
 			$options = socket_set_option($sock, SOL_SOCKET, SO_BROADCAST, true);
 			if ($options !== false) {
-				socket_sendto($sock, $magicPacket, strlen($magicPacket), 0, $broadcast, 9);
+				socket_sendto($sock, $magicPacket, strlen($magicPacket), 0, '255.255.255.255', 9);
 				socket_close($sock);
 				return true;
 			}

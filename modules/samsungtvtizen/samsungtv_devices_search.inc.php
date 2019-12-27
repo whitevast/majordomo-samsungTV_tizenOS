@@ -7,9 +7,6 @@
    $out['CONTROLPANEL']=1;
   }
   $qry="1";
-  
-
-		
   // search filters
   // QUERY READY
   global $save_qry;
@@ -27,6 +24,9 @@
    //paging($res, 100, $out); // search result paging
    $total=count($res);
    for($i=0;$i<$total;$i++) {
+	   $app = SQLSelectOne("SELECT TITLE FROM samsungtv_apps WHERE DEVICE_ID='".$res[$i]['ID']."' AND STATE='1'");
+	   if($app['TITLE'] == '') $app['TITLE'] = "ТВ, HDMI или DLNA";
+	   $res[$i]['APP'] = $app['TITLE'];
     // some action for every record if required
    }
    $out['RESULT']=$res;
