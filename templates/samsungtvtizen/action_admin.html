@@ -58,7 +58,10 @@
    <a href="?data_source=<#DATA_SOURCE#>&view_mode=<#VIEW_MODE#>&id=<#ID#>&tab="><#LANG_GENERAL#></a>
   </li>
   <li[#if TAB="data"#] class="active"[#endif#]>
-   <a href="?data_source=<#DATA_SOURCE#>&view_mode=<#VIEW_MODE#>&id=<#ID#>&tab=data">Команды</a>
+   <a href="?data_source=<#DATA_SOURCE#>&view_mode=<#VIEW_MODE#>&id=<#ID#>&tab=data">Данные</a>
+  </li>
+  <li[#if TAB="codes"#] class="active"[#endif#]>
+   <a href="?data_source=<#DATA_SOURCE#>&view_mode=<#VIEW_MODE#>&id=<#ID#>&tab=codes">Команды</a>
   </li>
   <li[#if TAB="apps"#] class="active"[#endif#]>
    <a href="?data_source=<#DATA_SOURCE#>&view_mode=<#VIEW_MODE#>&id=<#ID#>&tab=apps">Приложения</a>
@@ -71,6 +74,9 @@
    [#endif TAB#]
    [#if TAB="data"#]
     [#inc samsungtv_devices_edit_data.html#]
+   [#endif TAB#]
+   [#if TAB="codes"#]
+    [#inc samsungtv_devices_edit_codes.html#]
    [#endif TAB#]
    [#if TAB="apps"#]
     [#inc samsungtv_devices_edit_apps.html#]

@@ -24,8 +24,10 @@
  </label>
  <div class="col-lg-9"><input id="ip" name="ip" value="[#IP#]" type="text" class="input"></div>
  </div>
+ [#if ID!=""#]
    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>ID телевизора:</b> [#ID#]<br>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Серийный номер:</b> [#SERIAL#] <br>
+ [#endif ID#]
 <div class="form-group">
         <div class="form-actions">
  [#if ID!=""#]

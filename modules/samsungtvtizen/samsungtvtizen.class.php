@@ -211,6 +211,12 @@ function usual(&$out) {
   $rec=SQLSelectOne("SELECT * FROM samsungtv_devices WHERE ID='$id'");
   // some action for related tables
   SQLExec("DELETE FROM samsungtv_devices WHERE ID='".$rec['ID']."'");
+    $properties=SQLSelect("SELECT * FROM samsungtv_data WHERE DEVICE_ID='".$rec['ID']."' ORDER BY ID");
+    $total=count($properties);
+    for($i=0;$i<$total;$i++) {
+		if ($properties[$i]['LINKED_PROPERTY'] != '')  removeLinkedProperty($properties[$i]['LINKED_OBJECT'], $properties[$i]['LINKED_PROPERTY'], $this->name);
+	}
+  SQLExec("DELETE FROM samsungtv_data WHERE DEVICE_ID='".$rec['ID']."'");
   	$properties=SQLSelect("SELECT * FROM samsungtv_codes WHERE DEVICE_ID='".$rec['ID']."' ORDER BY ID");
     $total=count($properties);
     for($i=0;$i<$total;$i++) {
@@ -247,30 +253,45 @@ function usual(&$out) {
 	 $sams = new samsung();
 	 $device = SQLSelect("SELECT * FROM samsungtv_devices");
 	 foreach($device as $val){
+		$datast = SQLSelectOne("SELECT * FROM samsungtv_data WHERE DEVICE_ID = '".(int)$val['ID']."' AND KEY_ID = 'ST'");
+		$datavol = SQLSelectOne("SELECT * FROM samsungtv_data WHERE DEVICE_ID = '".(int)$val['ID']."' AND KEY_ID = 'VOL'");
+		$dataapp = SQLSelectOne("SELECT * FROM samsungtv_data WHERE DEVICE_ID = '".(int)$val['ID']."' AND KEY_ID = 'APP'");
+		$volume = $sams->getvol($val['ID']);
+		if(!$volume){
+			if($datast['VALUE']){
+				$datast['VALUE'] = 0;
+				$datast['UPDATED'] = date('Y-m-d H:i:s');
+				SQLUpdate('samsungtv_data', $datast);
+				$this->setProperty($datast, $datast['VALUE']);
+			}
+			break;
+		}
+		if(!$datast['VALUE']){
+			$datast['VALUE'] = 1;
+			$datast['UPDATED'] = date('Y-m-d H:i:s');
+			SQLUpdate('samsungtv_data', $datast);
+			$this->setProperty($datast, $datast['VALUE']);
+		}
+		if($datavol['VALUE'] != $volume){
+			$datavol['VALUE'] = $volume;
+			$datavol['UPDATED'] = date('Y-m-d H:i:s');
+			SQLUpdate('samsungtv_data', $datavol);
+			$this->setProperty($datavol, $datavol['VALUE']);
+		}
 		 $app = SQLSelect("SELECT * FROM samsungtv_apps WHERE DEVICE_ID = '".(int)$val['ID']."'");
 		 foreach($app as $valap){
-			$volume = $sams->getvol($val['ID']);
-			if(!$volume){
-				if($val['ONLINE']){
-					$val['ONLINE'] = 0;
-					SQLUpdate('samsungtv_devices', $val);
-				}
-				break;
-			}
-			if(!$val['ONLINE']){
-				$val['ONLINE'] = 1;
-				SQLUpdate('samsungtv_devices', $val);
-			}
-			if($val['VOLUME'] != $volume){
-				$val['VOLUME'] = $volume;
-				SQLUpdate('samsungtv_devices', $val);
-			}
 			if($stateget){
 				$state = $sams->appmgnt($val['ID'], $valap['APPID']);
 				$state = json_decode($state, true);
 				if($state['visible']){
-					$valap['STATE'] = 1;
-					SQLUpdate('samsungtv_apps', $valap);
+					if($valap['STATE'] != 1){
+						$valap['STATE'] = 1;
+						SQLUpdate('samsungtv_apps', $valap);
+						$dataapp['VALUE'] = $valap['TITLE'];
+						$dataapp['UPDATED'] = date('Y-m-d H:i:s');
+						SQLUpdate('samsungtv_data', $dataapp);
+						$this->setProperty($dataapp, $valap['TITLE']);
+					}
 					$stateget = 0;
 					continue;
 				}
@@ -282,6 +303,12 @@ function usual(&$out) {
 		}
 	 }
  }
+//Запись в привязанное свойство
+function setProperty($line, $value){
+        if ($line['LINKED_OBJECT'] && $line['LINKED_PROPERTY']) {
+			setGlobal($line['LINKED_OBJECT'] . '.' . $line['LINKED_PROPERTY'], $value);
+        }
+    }
 
  function propertySetHandle($object, $property, $value){
 		$sams = new samsung();
@@ -413,8 +440,15 @@ samsungtv_codes -
  samsungtv_devices: SERIAL varchar(100) NOT NULL DEFAULT ''
  samsungtv_devices: MAC varchar(100) NOT NULL DEFAULT ''
  samsungtv_devices: TOKEN varchar(100) NOT NULL DEFAULT ''
- samsungtv_devices: VOLUME varchar(100) NOT NULL DEFAULT ''
- samsungtv_devices: ONLINE tinyint(2) unsigned NOT NULL DEFAULT '0'
+ samsungtv_data: ID int(10) unsigned NOT NULL auto_increment
+ samsungtv_data: KEY_ID varchar(100) NOT NULL DEFAULT ''
+ samsungtv_data: TITLE varchar(100) NOT NULL DEFAULT ''
+ samsungtv_data: VALUE varchar(255) NOT NULL DEFAULT ''
+ samsungtv_data: DEVICE_ID int(10) NOT NULL DEFAULT '0'
+ samsungtv_data: LINKED_OBJECT varchar(100) NOT NULL DEFAULT ''
+ samsungtv_data: LINKED_PROPERTY varchar(100) NOT NULL DEFAULT ''
+ samsungtv_data: LINKED_METHOD varchar(100) NOT NULL DEFAULT ''
+ samsungtv_data: UPDATED datetime
  samsungtv_codes: ID int(10) unsigned NOT NULL auto_increment
  samsungtv_codes: TITLE varchar(100) NOT NULL DEFAULT ''
  samsungtv_codes: VALUE varchar(255) NOT NULL DEFAULT ''

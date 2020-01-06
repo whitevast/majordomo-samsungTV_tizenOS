@@ -24,6 +24,11 @@
    //paging($res, 100, $out); // search result paging
    $total=count($res);
    for($i=0;$i<$total;$i++) {
+	   $data = SQLSelect("SELECT * FROM samsungtv_data WHERE DEVICE_ID = '".$res[$i]['ID']."'");
+	   foreach($data as $value){
+		   if($value['KEY_ID']=='ST') $res[$i]['ONLINE'] = $value['VALUE'];
+		   elseif($value['KEY_ID']=='VOL') $res[$i]['VOLUME'] = $value['VALUE'];
+	   }
 	   $app = SQLSelectOne("SELECT TITLE FROM samsungtv_apps WHERE DEVICE_ID='".$res[$i]['ID']."' AND STATE='1'");
 	   if($app['TITLE'] == '') $app['TITLE'] = "ТВ, HDMI или DLNA";
 	   $res[$i]['APP'] = $app['TITLE'];

@@ -19,20 +19,28 @@
   <td><#LANG_VALUE#></td>
   <td><#LANG_LINKED_OBJECT#></td>
   <td><#LANG_LINKED_PROPERTY#></td>
-  <td><#LANG_METHOD#></td>
-  <td valign="top"><#LANG_UPDATED#></td>
+  <td>&nbsp;</td>
  </tr>
- [#begin DTABLE#]
+ [#begin PROPERTIES#]
  <tr>
   <td valign="top">[#TITLE#]</td>
+  [#if VALUE=='KEY_KEY'#]
   <td valign="top">[#VALUE#]</td>
+  [#else#]
+  <td valign="top"><input type="text" name="value[#ID#]" id="value[#ID#]" value="[#VALUE#]"></td>
+  [#endif#]
   <td valign="top"><input type="text" name="linked_object[#ID#]" id="linked_object[#ID#]" value="[#LINKED_OBJECT#]"></td>
   <td valign="top"><input type="text" name="linked_property[#ID#]" id="linked_property[#ID#]" value="[#LINKED_PROPERTY#]"></td>
-  <td valign="top"><input type="text" name="linked_method[#ID#]" id="linked_method[#ID#]" value="[#LINKED_METHOD#]"></td>
-  [#module name="linkedobject" object_field="linked_object<#DTABLE.ID#>" property_field="linked_property<#DTABLE.ID#>" method_field="linked_method<#DTABLE.ID#>" width="200"#]
-  <td valign="top">[#UPDATED#]</td>
+  [#module name="linkedobject" object_field="linked_object<#PROPERTIES.ID#>" property_field="linked_property<#PROPERTIES.ID#>" method_field="linked_method<#PROPERTIES.ID#>" width="200"#]
+  <td><a href="?id=<#ID#>&tab=<#TAB#>&view_mode=<#VIEW_MODE#>&page=[#NUM#]&test_id=[#ID#]" class="btn btn-default "  title="Тест" id="test_btn[#ID#]"><i class="glyphicon glyphicon-flash"></i></a>
+	  <a href="?id=<#ID#>&tab=<#TAB#>&view_mode=<#VIEW_MODE#>&delete_id=[#ID#]" onClick="return confirm('<#LANG_ARE_YOU_SURE#>');" class="btn btn-default"><i class="glyphicon glyphicon-remove"></i></td>
  </tr>
- [#end DTABLE#]
+ [#end PROPERTIES#]
+  <tr>
+  <td colspan="20">
+   <#LANG_ADD#>: <input type="text" name="title_new" value="">
+  </td>
+ </tr>
 </table> 
 </div>
 </div>

@@ -42,9 +42,6 @@ $sams = new samsung();
   }
    
   
-  // step: data
-  if ($this->tab=='data') {
-  }
   //UPDATING RECORD
    if ($ok) {
     if ($rec['ID']) {
@@ -85,6 +82,15 @@ $sams = new samsung();
 		  $code['VALUE'] = $codes[$i][0];
 		  SQLInsert('samsungtv_codes', $code);
 	  }
+	  $data = [['Статус','ST'],
+		  ['Громкость','VOL'],
+		  ['Активное приложение','APP']];
+	  $dataadd['DEVICE_ID'] = $rec['ID'];
+	  for ($i=0; $i<count($data); $i++){
+		  $dataadd['TITLE'] = $data[$i][0];
+		  $dataadd['KEY_ID'] = $data[$i][1];
+		  SQLInsert('samsungtv_data', $dataadd);
+	  }
 	  setGlobal('cycle_samsungtvtizenControl','start');
     }
     $out['OK']=1;
@@ -95,8 +101,43 @@ $sams = new samsung();
   // step: default
   if ($this->tab=='') {
   }
-  // step: data
+  // Вкладка Данные
   if ($this->tab=='data') {
+   //dataset2
+   $new_id=0;
+    if ($this->mode=='update') {
+    global $title_new;
+	if ($title_new) {
+	 $prop=array('TITLE'=>$title_new,'DEVICE_ID'=>$rec['ID']);
+	 $new_id=SQLInsert('samsungtv_data',$prop);
+	}
+   }
+   $dtable=SQLSelect("SELECT * FROM samsungtv_data WHERE DEVICE_ID='".$rec['ID']."' ORDER BY ID");
+   $total=count($dtable);
+   for($i=0;$i<$total;$i++) {
+    if ($dtable[$i]['ID']==$new_id) continue;
+	if ($test_id) continue; 
+    if ($this->mode=='update') {
+	  $old_linked_object=$dtable[$i]['LINKED_OBJECT'];
+      $old_linked_property=$dtable[$i]['LINKED_PROPERTY'];
+      global ${'linked_object'.$dtable[$i]['ID']};
+      $dtable[$i]['LINKED_OBJECT']=trim(${'linked_object'.$dtable[$i]['ID']});
+      global ${'linked_property'.$dtable[$i]['ID']};
+      $dtable[$i]['LINKED_PROPERTY']=trim(${'linked_property'.$dtable[$i]['ID']});
+      SQLUpdate('samsungtv_data', $dtable[$i]);
+      if ($old_linked_object && $old_linked_object!=$dtable[$i]['LINKED_OBJECT'] && $old_linked_property && $old_linked_property!=$dtable[$i]['LINKED_PROPERTY']) {
+       removeLinkedProperty($old_linked_object, $old_linked_property, $this->name);
+      }
+      if ($dtable[$i]['LINKED_OBJECT'] && $dtable[$i]['LINKED_PROPERTY']) {
+       addLinkedProperty($dtable[$i]['LINKED_OBJECT'], $dtable[$i]['LINKED_PROPERTY'], $this->name);
+      }
+     }
+   }
+   $out['DTABLE']=$dtable;   
+  }
+  
+  // Вкладка Команды
+  if ($this->tab=='codes') {
    //dataset2
    $new_id=0;
     if ($this->mode=='update') {
@@ -117,7 +158,7 @@ $sams = new samsung();
    if ($test_id) {
     $key = SQLSelectOne("SELECT * FROM samsungtv_codes WHERE ID='".(int)$test_id."'")['VALUE'];
 	$sams->sendkey($rec["ID"], $key);
-	$this->redirect("?data_source=&view_mode=edit_samsungtv_devices&id=".$rec['ID']."&tab=data");
+	$this->redirect("?data_source=&view_mode=edit_samsungtv_devices&id=".$rec['ID']."&tab=codes");
 	}
    
    $properties=SQLSelect("SELECT * FROM samsungtv_codes WHERE DEVICE_ID='".$rec['ID']."' ORDER BY ID");
@@ -129,7 +170,7 @@ $sams = new samsung();
 	  $old_linked_object=$properties[$i]['LINKED_OBJECT'];
       $old_linked_property=$properties[$i]['LINKED_PROPERTY'];
       global ${'value'.$properties[$i]['ID']};
-      $properties[$i]['VALUE']=trim(${'value'.$properties[$i]['ID']});
+	  if($properties[$i]['VALUE'] != 'KEY_KEY') $properties[$i]['VALUE']=trim(${'value'.$properties[$i]['ID']});
       global ${'linked_object'.$properties[$i]['ID']};
       $properties[$i]['LINKED_OBJECT']=trim(${'linked_object'.$properties[$i]['ID']});
       global ${'linked_property'.$properties[$i]['ID']};
@@ -146,7 +187,7 @@ $sams = new samsung();
    $out['PROPERTIES']=$properties;   
   }
   
-    // step: apps
+    // Вкладка Приложения
   if ($this->tab=='apps') {
    //dataset2
    $new_id=0;
