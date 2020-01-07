@@ -308,6 +308,10 @@ function setProperty($line, $value){
         if ($line['LINKED_OBJECT'] && $line['LINKED_PROPERTY']) {
 			setGlobal($line['LINKED_OBJECT'] . '.' . $line['LINKED_PROPERTY'], $value);
         }
+		if ($line['LINKED_OBJECT'] && $line['LINKED_METHOD']) {
+			$params['VALUE'] = $line['VALUE'];
+			callMethodSafe($line['LINKED_OBJECT'] . '.' . $line['LINKED_METHOD'], $params);
+        }
     }
 
  function propertySetHandle($object, $property, $value){
