@@ -1,8 +1,10 @@
 
 <!-- table zwave_devices search -->
 <div>
-<p>
 <a href="?view_mode=edit_samsungtv_devices&data_source=<#DATA_SOURCE#>" class="btn btn-default"><i class="glyphicon glyphicon-plus"></i> <#LANG_ADD#></a>
+&nbsp;&nbsp;
+ <!--# Кнопка 'Настройки'. #-->
+<a class="btn btn-default" href="#api_settings" data-toggle="collapse"><i class="glyphicon glyphicon-cog"></i></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	
 	[#if CYCLERUN==1#]
 		<span class="label label-success" title="Статус цикла">Цикл запущен</span>
@@ -11,21 +13,17 @@
 	[#endif#]
   <!--# Кнопка 'Справка'. #-->
      <a href="?view_mode=show_help" class="btn btn-default btn-sm float-right" title="Справка"><i class="glyphicon glyphicon-question-sign"></i></a>
-</p>
-     
-<!-- [ <a href="#" onClick="$('#api_settings').toggle();return false;"><#LANG_SETUP#></a> ]
 </div>
-<div style="display:none" id='api_settings'>
+<div class="collapse" id='api_settings'>
 &nbsp;
 <form action="?" method="post" enctype="multipart/form-data" name="frmEdit" class="form-horizontal">
 <fieldset>
-<div class="form-group">
- <label class="control-label"[#if ERR_API_URL#] style="color:red;font-weight:bold"[#endif#]>
- API URL:
- (*)
- </label>
- <div class="controls"><input type="text" name="api_url" value="[#API_URL#]" class="input"></div>
-</div>
+         <div class="form-group">
+            <div class="controls">
+               <input type="checkbox" name="log_debmes" value="1"[#if LOG_DEBMES="1"#] checked[#endif#]> 
+               <span class='text' data-toggle="tooltip" title="Запись обмена сообщениями между сервером и ТВ в отдельный лог-файл YYYY-mm-dd_samsungtv.log.">Отладка  DebMes</span>
+            </div>
+         </div>
 <div class="form-actions">
 <button type="submit" name="subm" value="Submit" class="btn btn-primary"><#LANG_UPDATE#></button>
 <input type="hidden" name="view_mode" value="update_settings">

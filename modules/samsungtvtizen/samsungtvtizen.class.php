@@ -22,6 +22,8 @@ function __construct() {
   $this->title="SamsungTV";
   $this->module_category="<#LANG_SECTION_DEVICES#>";
   $this->checkInstalled();
+  $this->getConfig();
+  $this->debug = ($this->config['LOG_DEBMES'] == 1) ? true : false;
 }
 
 
@@ -130,22 +132,11 @@ function admin(&$out) {
 		}
 	
  $this->getConfig();
- $out['API_URL']=$this->config['API_URL'];
- if (!$out['API_URL']) {
-  $out['API_URL']='http://';
- }
- $out['API_KEY']=$this->config['API_KEY'];
- $out['API_USERNAME']=$this->config['API_USERNAME'];
- $out['API_PASSWORD']=$this->config['API_PASSWORD'];
+ $out['LOG_DEBMES']=$this->config['LOG_DEBMES'];
+
  if ($this->view_mode=='update_settings') {
-   global $api_url;
-   $this->config['API_URL']=$api_url;
-   global $api_key;
-   $this->config['API_KEY']=$api_key;
-   global $api_username;
-   $this->config['API_USERNAME']=$api_username;
-   global $api_password;
-   $this->config['API_PASSWORD']=$api_password;
+   global $log_debmes;
+   $this->config['LOG_DEBMES']=$log_debmes;
    $this->saveConfig();
    $this->redirect("?");
  }
@@ -250,7 +241,8 @@ function usual(&$out) {
  function processCycle() {
 	 $stateget = 1;
 	 $this->getConfig();
-	 $sams = new samsung();
+	 $this->debug = ($this->config['LOG_DEBMES'] == 1) ? true : false;
+	 $sams = new samsung($this->debug);
 	 $device = SQLSelect("SELECT * FROM samsungtv_devices");
 	 foreach($device as $val){
 		$datast = SQLSelectOne("SELECT * FROM samsungtv_data WHERE DEVICE_ID = '".(int)$val['ID']."' AND KEY_ID = 'ST'");
@@ -301,7 +293,7 @@ function usual(&$out) {
 				SQLUpdate('samsungtv_apps', $valap);
 			}
 		}
-	 }
+	}
  }
 //Запись в привязанное свойство
 function setProperty($line, $value){
@@ -315,7 +307,7 @@ function setProperty($line, $value){
     }
 
  function propertySetHandle($object, $property, $value){
-		$sams = new samsung();
+		$sams = new samsung($this->debug);
 	    $samstv = SQLSelect("SELECT ID FROM samsungtv_codes WHERE LINKED_OBJECT LIKE '" . DBSafe($object) . "' AND LINKED_PROPERTY LIKE '" . DBSafe($property) . "'");
 		$total = count($samstv);
 		//обработка команды из таблицы команд
@@ -331,23 +323,22 @@ function setProperty($line, $value){
 						usleep(200000);
 					}
 				}elseif($key['VALUE'] == "KEY_VOL"){
-						if(!$value)	$sams->sendkey($key['DEVICE_ID'], "KEY_MUTE");
-						else {
-							if($value > 0) $key['VALUE'] = "KEY_VOLUP";
-							else{
-								$key['VALUE'] = "KEY_VOLDOWN";
-								$value = abs($value);
-							}
-							for($i=1; $i<=$value; $i++){
-								$sams->sendkey($key['DEVICE_ID'], $key['VALUE']);
-								usleep(200000);
-							}
-							
+					if(!$value)	$sams->sendkey($key['DEVICE_ID'], "KEY_MUTE");
+					else {
+						if($value > 0) $key['VALUE'] = "KEY_VOLUP";
+						else{
+							$key['VALUE'] = "KEY_VOLDOWN";
+							$value = abs($value);
 						}
+						for($i=1; $i<=$value; $i++){
+							$sams->sendkey($key['DEVICE_ID'], $key['VALUE']);
+							usleep(200000);
+						}
+					}
 				}
 				elseif($key['VALUE'] == "KEY_POWER"){
-					$status = SQLSelectOne('SELECT ONLINE FROM samsungtv_devices WHERE ID ="'.(int)$key['DEVICE_ID'].'"');
-					if(($value and !$status['ONLINE']) or (!$value and $status['ONLINE'])) $sams->sendkey($key['DEVICE_ID'], $key['VALUE']);
+					$status = SQLSelectOne('SELECT VALUE FROM samsungtv_data WHERE DEVICE_ID ="'.(int)$key['DEVICE_ID'].'" and KEY_ID = "ST"');
+					if(($value and !$status['VALUE']) or (!$value and $status['VALUE'])) $sams->sendkey($key['DEVICE_ID'], $key['VALUE']);
 				}
 				elseif($key['VALUE'] == "KEY_SETVOL"){
 					$sams->setvol($key['DEVICE_ID'], $value);
@@ -396,6 +387,12 @@ function setProperty($line, $value){
 		}
     }
 
+   function WriteLog($msg)
+   {
+      if ($this->debug) {
+         DebMes($msg, $this->name);
+      }
+   }
 
 /**
 * Install
@@ -444,6 +441,7 @@ samsungtv_codes -
  samsungtv_devices: SERIAL varchar(100) NOT NULL DEFAULT ''
  samsungtv_devices: MAC varchar(100) NOT NULL DEFAULT ''
  samsungtv_devices: TOKEN varchar(100) NOT NULL DEFAULT ''
+ samsungtv_devices: PORT varchar(100) NOT NULL DEFAULT ''
  samsungtv_data: ID int(10) unsigned NOT NULL auto_increment
  samsungtv_data: KEY_ID varchar(100) NOT NULL DEFAULT ''
  samsungtv_data: TITLE varchar(100) NOT NULL DEFAULT ''

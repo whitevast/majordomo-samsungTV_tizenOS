@@ -7,15 +7,62 @@
 */
 class samsung{
 	
-	function __construct() {
+	function __construct($debug) {
+		 $this->debug = $debug;
 	}
 
-	function gettoken($ip){
-		$socket = $this->connecttv($ip);
+	function WriteLog($msg){
+		if ($this->debug) {
+			DebMes($msg, 'samsungtvtizen');
+		}
+    }
+	
+	function connecttv($ip, $port, $token=''){ //подключение к телевизору
+		$name = utf8_decode(base64_encode('MajorDoMo'));
+		$path = "/api/v2/channels/samsung.remote.control?name=$name&token=$token"; //
+		
+		if($port == '8001'){
+			$protocol = 'tcp';
+			$context = stream_context_create();
+		} 
+		else{
+			$protocol = 'ssl';
+			$context = stream_context_create([
+				'ssl' => [
+				'verify_peer_name' => false,
+				'verify_peer' => false
+				]
+			]);
+		}
+		//print "$protocol://$ip:$port";
+		@$socket = stream_socket_client("$protocol://$ip:$port", $errorNumber, $errorString, 1, STREAM_CLIENT_CONNECT, $context);
+
+		if (!$socket) {
+			$this->WriteLog("Error connect to: {$ip}");
+			return false;
+		} else {       
+			$head = "GET " . $path . " HTTP/1.1\r\n" .
+				"Host: localhost\r\n" .
+				"Upgrade: websocket\r\n" .
+				"Connection: Upgrade\r\n" .
+				"Sec-WebSocket-Key: tQXaRIOk4sOhqwe7SBs43g==\r\n" .
+				"Sec-WebSocket-Version: 13\r\n"."\r\n";
+			fwrite($socket, $head);
+			$headers = fread($socket, 2000);
+			//echo $headers;
+			usleep(500);
+			if($token !='') fread($socket, 2000);
+			return $socket;
+		}
+	}
+	
+	function gettoken($ip, $port){
+		$socket = $this->connecttv($ip, $port);
 		if (!$socket) return false;
 		$wsdata = fread($socket, 2000);
 		fclose($socket);
 		$wsdata = $this->hybi10Decode($wsdata);
+		$this->WriteLog("{$ip}: {$wsdata}");
 		$data = json_decode($wsdata, true);
 		$token = $data['data']['token'];
 		if(!$token) return -1;
@@ -24,7 +71,7 @@ class samsung{
 
 	function getapps($id){
 		$device = SQLSelectOne("SELECT * FROM samsungtv_devices WHERE ID='".$id."'");
-		$socket = $this->connecttv($device["IP"], $device["TOKEN"]);
+		$socket = $this->connecttv($device["IP"], $device['PORT'], $device["TOKEN"]);
 		if(!$socket) return false;
 		$data = '{"method":"ms.channel.emit","params":{"event":"ed.installedApp.get","to":"host"}}';
 		fwrite($socket,$this->hybi10Encode($data));
@@ -37,28 +84,30 @@ class samsung{
 
 	function sendkey($id, $key){
 		$device = SQLSelectOne("SELECT * FROM samsungtv_devices WHERE ID='".$id."'");
-		$socket = $this->connecttv($device["IP"], $device["TOKEN"]);
+		$socket = $this->connecttv($device["IP"], $device['PORT'], $device["TOKEN"]);
 		if(!$socket){
 			if($key == "KEY_POWER") {
 				$wol = $this->wol($device["MAC"]);
 				return $wol;
 			}
 			return false;
-		} else{
+		} else {
 			$data = '{"method":"ms.remote.control","params":{"Cmd":"Click","DataOfCmd":"'.$key.'","Option":"false","TypeOfRemote":"SendRemoteKey"}}';
 			fwrite($socket,$this->hybi10Encode($data));
 			fclose($socket);
+			$this->WriteLog("Sent Key: {$key} to: {$device["TITLE"]}");
 			return true;
 		}
 	}
 	
 	function ineturl($id, $url){
 		$device = SQLSelectOne("SELECT * FROM samsungtv_devices WHERE ID='".$id."'");
-		$socket = $this->connecttv($device["IP"], $device["TOKEN"]);
+		$socket = $this->connecttv($device["IP"], $device['PORT'], $device["TOKEN"]);
 		if(!$socket) return false;
 		$data = '{"method":"ms.channel.emit","params":{"event":"ed.apps.launch","to":"host","data":{"appId":"org.tizen.browser","action_type":"NATIVE_LAUNCH","metaTag":"'.$url.'"}}}';
 		fwrite($socket,$this->hybi10Encode($data));
 		fclose($socket);
+		$this->WriteLog("Sent URL: {$url} to: {$device["TITLE"]}");
 		return true;	
 	}
 
@@ -85,6 +134,7 @@ class samsung{
 			if ($options !== false) {
 				socket_sendto($sock, $magicPacket, strlen($magicPacket), 0, '255.255.255.255', 9);
 				socket_close($sock);
+				$this->WriteLog("Sent MagicPacket to: {$mac}");
 				return true;
 			}
 		}
@@ -123,6 +173,7 @@ class samsung{
 	function setvol($id, $value){
 		$device = SQLSelectOne("SELECT * FROM samsungtv_devices WHERE ID='".$id."'");
 		if(!$this->soap($device["IP"], 'SetVolume', '<Channel>Master</Channel><DesiredVolume>'.$value.'</DesiredVolume>', 'RenderingControl')) return false;
+		$this->WriteLog("Volume set to {$value} to device: {$device["TITLE"]}");
 		return true;
 	}
 	function getmute($id){
@@ -152,36 +203,6 @@ class samsung{
 	debmes('STVPower: Неверное имя устройства');
 }
 	
-	function connecttv($ip, $token=''){ //подключение к телевизору
-		$name = utf8_decode(base64_encode('MajorDoMo'));
-		$path = "/api/v2/channels/samsung.remote.control?name=$name&token=$token"; //
-
-		$context = stream_context_create([
-		   'ssl' => [
-			'verify_peer_name' => false,
-			'verify_peer' => false
-		   ]
-		]);
-
-		@$socket = stream_socket_client("ssl://$ip:8002", $errorNumber, $errorString, 1, STREAM_CLIENT_CONNECT, $context);
-
-		if (!$socket) {
-			return(false);
-		} else {       
-			$head = "GET " . $path . " HTTP/1.1\r\n" .
-				"Host: localhost\r\n" .
-				"Upgrade: websocket\r\n" .
-				"Connection: Upgrade\r\n" .
-				"Sec-WebSocket-Key: tQXaRIOk4sOhqwe7SBs43g==\r\n" .
-				"Sec-WebSocket-Version: 13\r\n"."\r\n";
-			fwrite($socket, $head);
-			$headers = fread($socket, 2000);
-			//echo $headers;
-			usleep(500);
-			if($token != '') fread($socket, 2000);
-			return($socket);
-		}
-	}
 
 	//Функции кодирования/декодирования вебсокетов
 	////////////////////////////////////-----------------------------------//////////////////////////////////

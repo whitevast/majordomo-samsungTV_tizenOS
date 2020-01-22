@@ -24,7 +24,16 @@
  </label>
  <div class="col-lg-9"><input id="ip" name="ip" value="[#IP#]" type="text" class="input"></div>
  </div>
+ [#if ID=""#]
+<div class="form-group">
+    <div class="controls">
+       <input type="checkbox" name="alt_port" value="1"[#if ALT_PORT="1"#] checked[#endif#]> 
+       <span class='text' data-toggle="tooltip" title="Включение альтернативного порта для подключения к телевизору. Может работать на старших моделях (2014-15гг.)">Порт 8001</span>
+    </div>
+ </div>
+ [#endif ID#]
  [#if ID!=""#]
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Порт:</b>[#PORT#]<br>
    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>ID телевизора:</b> [#ID#]<br>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Серийный номер:</b> [#SERIAL#] <br>
  [#endif ID#]

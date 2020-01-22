@@ -2,9 +2,7 @@
 /*
 * @version 0.1 (wizard)
 */
-
-include_once(DIR_MODULES . 'samsungtvtizen/lib/samsungtizen.class.php');
-$sams = new samsung();
+ $sams = new samsung($this->debug);
   if ($this->owner->name=='panel') {
    $out['CONTROLPANEL']=1;
   }
@@ -16,19 +14,20 @@ $sams = new samsung();
   if ($this->tab=='') {
    $rec['TITLE']=gr('title');
    $rec['IP']=gr('ip');
+   $rec['PORT']=gr('alt_port') ? '8001':'8002';
    if ($rec['TITLE']=='' or $rec['IP']=='') {
 	$out['ERR_ALERT']=($rec['TITLE']=='')?"Введите название телевизора!":"Введите адрес телевизора!";
     $ok=0;
    }
    if($ok){
-	 $rec['TOKEN'] = $sams->gettoken($rec['IP']);
+	 $rec['TOKEN'] = $sams->gettoken($rec['IP'],  $rec['PORT']);
 	 if(!$rec['TOKEN']){
 		 $ok=0;
 		 $out['ERR_ALERT']="Неправильный адрес телевизора или телевизор выключен!";
 	 }
 	 else if($rec['TOKEN'] == -1){
 		$ok=0;
-		$out['ERR_ALERT']="Что-то пошло не так... Возможно, доступ к телевизору заблокирован";
+		$out['ERR_ALERT']="Соединение установлено, но токен не был получен. См. лог-файл xxx-xx-xx_samsungtvtizen.log";
 	}
 	 else {
 		$url = "http://".$rec['IP'].":9197/dmr";
@@ -156,14 +155,13 @@ $sams = new samsung();
    
    global $test_id;
    if ($test_id) {
-    $key = SQLSelectOne("SELECT * FROM samsungtv_codes WHERE ID='".(int)$test_id."'")['VALUE'];
-	$sams->sendkey($rec["ID"], $key);
-	$this->redirect("?data_source=&view_mode=edit_samsungtv_devices&id=".$rec['ID']."&tab=codes");
+		$key = SQLSelectOne("SELECT * FROM samsungtv_codes WHERE ID='".(int)$test_id."'")['VALUE'];
+		$sams->sendkey($rec["ID"], $key);
+		$this->redirect("?data_source=&view_mode=edit_samsungtv_devices&id=".$rec['ID']."&tab=codes");
 	}
-   
-   $properties=SQLSelect("SELECT * FROM samsungtv_codes WHERE DEVICE_ID='".$rec['ID']."' ORDER BY ID");
-   $total=count($properties);
-   for($i=0;$i<$total;$i++) {
+	$properties=SQLSelect("SELECT * FROM samsungtv_codes WHERE DEVICE_ID='".$rec['ID']."' ORDER BY ID");
+    $total=count($properties);
+    for($i=0;$i<$total;$i++) {
     if ($properties[$i]['ID']==$new_id) continue;
 	if ($test_id) continue; 
     if ($this->mode=='update') {
