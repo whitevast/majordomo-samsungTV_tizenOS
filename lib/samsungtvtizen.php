@@ -5,7 +5,8 @@ function STVPowerOn($id){
 	$sams = new samsung($samsungtvtizen_module->debug);
 	$device = $sams->dev($id);
 	if(!$device) exit;
-	if(!$device['ONLINE']) $sams->sendkey($device['ID'], 'KEY_POWER'); 
+	$status = SQLSelectOne('SELECT VALUE FROM samsungtv_data WHERE DEVICE_ID ="'.(int)$device['ID'].'" and KEY_ID = "ST"');
+	if(!$status['VALUE']) $sams->sendkey($device['ID'], 'KEY_POWER'); 
 }
 
 function STVPowerOff($id){
@@ -14,7 +15,8 @@ function STVPowerOff($id){
 	$sams = new samsung($samsungtvtizen_module->debug);
 	$device = $sams->dev($id);
 	if(!$device) exit;
-	if($device['ONLINE']) $sams->sendkey($device['ID'], 'KEY_POWER'); 
+	$status = SQLSelectOne('SELECT VALUE FROM samsungtv_data WHERE DEVICE_ID ="'.(int)$device['ID'].'" and KEY_ID = "ST"');
+	if($status['VALUE']) $sams->sendkey($device['ID'], 'KEY_POWER'); 
 }
 
 function STVVolUp($id, $value = 1){
