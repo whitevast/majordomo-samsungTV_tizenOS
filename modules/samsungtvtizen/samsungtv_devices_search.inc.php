@@ -29,8 +29,10 @@
 		   if($value['KEY_ID']=='ST') $res[$i]['ONLINE'] = $value['VALUE'];
 		   elseif($value['KEY_ID']=='VOL') $res[$i]['VOLUME'] = $value['VALUE'];
 	   }
-	   $app = SQLSelectOne("SELECT TITLE FROM samsungtv_apps WHERE DEVICE_ID='".$res[$i]['ID']."' AND STATE='1'");
-	   if($app['TITLE'] == '') $app['TITLE'] = "ТВ, HDMI или DLNA";
+	   if($res[$i]['PORT'] == '8001' or $res[$i]['PORT'] == '8002'){
+		   $app = SQLSelectOne("SELECT TITLE FROM samsungtv_apps WHERE DEVICE_ID='".$res[$i]['ID']."' AND STATE='1'");
+		   if($app['TITLE'] == '') $app['TITLE'] = "ТВ, HDMI или DLNA";
+	   }else $app['TITLE'] = "Нет данных (SmartThings)";
 	   $res[$i]['APP'] = $app['TITLE'];
     // some action for every record if required
    }

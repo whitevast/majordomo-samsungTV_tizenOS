@@ -61,9 +61,11 @@
   <li[#if TAB="codes"#] class="active"[#endif#]>
    <a href="?data_source=<#DATA_SOURCE#>&view_mode=<#VIEW_MODE#>&id=<#ID#>&tab=codes">Команды</a>
   </li>
+  [#if PORT="8001" or PORT="8002"#]
   <li[#if TAB="apps"#] class="active"[#endif#]>
    <a href="?data_source=<#DATA_SOURCE#>&view_mode=<#VIEW_MODE#>&id=<#ID#>&tab=apps">Приложения</a>
   </li>
+  [#endif PORT#]
 </ul>
 &nbsp;<br/>
    [#endif ID#]

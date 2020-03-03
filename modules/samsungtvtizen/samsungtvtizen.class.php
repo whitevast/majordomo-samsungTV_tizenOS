@@ -247,50 +247,76 @@ function usual(&$out) {
 	 foreach($device as $val){
 		$datast = SQLSelectOne("SELECT * FROM samsungtv_data WHERE DEVICE_ID = '".(int)$val['ID']."' AND KEY_ID = 'ST'");
 		$datavol = SQLSelectOne("SELECT * FROM samsungtv_data WHERE DEVICE_ID = '".(int)$val['ID']."' AND KEY_ID = 'VOL'");
-		$dataapp = SQLSelectOne("SELECT * FROM samsungtv_data WHERE DEVICE_ID = '".(int)$val['ID']."' AND KEY_ID = 'APP'");
-		$volume = $sams->getvol($val['ID']);
-		if(!$volume){
-			if($datast['VALUE']){
-				$datast['VALUE'] = 0;
+		if($val['PORT']=='8001' or $val['PORT']=='8002'){
+			$dataapp = SQLSelectOne("SELECT * FROM samsungtv_data WHERE DEVICE_ID = '".(int)$val['ID']."' AND KEY_ID = 'APP'");
+			$volume = $sams->getvol($val['ID']);
+			if(!$volume){
+				if($datast['VALUE']){
+					$datast['VALUE'] = 0;
+					$datast['UPDATED'] = date('Y-m-d H:i:s');
+					SQLUpdate('samsungtv_data', $datast);
+					$this->setProperty($datast, $datast['VALUE']);
+				}
+				continue;
+			}
+			if(!$datast['VALUE']){
+				$datast['VALUE'] = 1;
 				$datast['UPDATED'] = date('Y-m-d H:i:s');
 				SQLUpdate('samsungtv_data', $datast);
 				$this->setProperty($datast, $datast['VALUE']);
 			}
-			break;
-		}
-		if(!$datast['VALUE']){
-			$datast['VALUE'] = 1;
-			$datast['UPDATED'] = date('Y-m-d H:i:s');
-			SQLUpdate('samsungtv_data', $datast);
-			$this->setProperty($datast, $datast['VALUE']);
-		}
-		if($datavol['VALUE'] != $volume){
-			$datavol['VALUE'] = $volume;
-			$datavol['UPDATED'] = date('Y-m-d H:i:s');
-			SQLUpdate('samsungtv_data', $datavol);
-			$this->setProperty($datavol, $datavol['VALUE']);
-		}
-		 $app = SQLSelect("SELECT * FROM samsungtv_apps WHERE DEVICE_ID = '".(int)$val['ID']."'");
-		 foreach($app as $valap){
-			if($stateget){
-				$state = $sams->appmgnt($val['ID'], $valap['APPID']);
-				$state = json_decode($state, true);
-				if($state['visible']){
-					if($valap['STATE'] != 1){
-						$valap['STATE'] = 1;
-						SQLUpdate('samsungtv_apps', $valap);
-						$dataapp['VALUE'] = $valap['TITLE'];
-						$dataapp['UPDATED'] = date('Y-m-d H:i:s');
-						SQLUpdate('samsungtv_data', $dataapp);
-						$this->setProperty($dataapp, $valap['TITLE']);
-					}
-					$stateget = 0;
-					continue;
-				}
+			if($datavol['VALUE'] != $volume){
+				$datavol['VALUE'] = $volume;
+				$datavol['UPDATED'] = date('Y-m-d H:i:s');
+				SQLUpdate('samsungtv_data', $datavol);
+				$this->setProperty($datavol, $datavol['VALUE']);
 			}
-			if($valap['STATE'] == 1){
-				$valap['STATE'] = 0;
-				SQLUpdate('samsungtv_apps', $valap);
+			 $app = SQLSelect("SELECT * FROM samsungtv_apps WHERE DEVICE_ID = '".(int)$val['ID']."'");
+			 foreach($app as $valap){
+				if($stateget){
+					$state = $sams->appmgnt($val['ID'], $valap['APPID']);
+					$state = json_decode($state, true);
+					if($state['visible']){
+						if($valap['STATE'] != 1){
+							$valap['STATE'] = 1;
+							SQLUpdate('samsungtv_apps', $valap);
+							$dataapp['VALUE'] = $valap['TITLE'];
+							$dataapp['UPDATED'] = date('Y-m-d H:i:s');
+							SQLUpdate('samsungtv_data', $dataapp);
+							$this->setProperty($dataapp, $valap['TITLE']);
+						}
+						$stateget = 0;
+						continue;
+					}
+				}
+				if($valap['STATE'] == 1){
+					$valap['STATE'] = 0;
+					SQLUpdate('samsungtv_apps', $valap);
+				}
+			 }
+		}
+		else{
+			$data = $sams->sget($val['ID']);
+			if($data['switch']['switch']['value'] == 'off'){
+				if($datast['VALUE']){
+					$datast['VALUE'] = 0;
+					$datast['UPDATED'] = date('Y-m-d H:i:s');
+					SQLUpdate('samsungtv_data', $datast);
+					$this->setProperty($datast, $datast['VALUE']);
+				}
+				continue;
+			}
+			if(!$datast['VALUE']){
+				$datast['VALUE'] = 1;
+				$datast['UPDATED'] = date('Y-m-d H:i:s');
+				SQLUpdate('samsungtv_data', $datast);
+				$this->setProperty($datast, $datast['VALUE']);
+			}
+			if($datavol['VALUE'] != $data['audioVolume']['volume']['value']){
+				$datavol['VALUE'] = $data['audioVolume']['volume']['value'];
+				$datavol['UPDATED'] = date('Y-m-d H:i:s');
+				SQLUpdate('samsungtv_data', $datavol);
+				$this->setProperty($datavol, $datavol['VALUE']);
 			}
 		}
 	}
@@ -314,58 +340,92 @@ function setProperty($line, $value){
         if ($total) { 
             for ($i = 0; $i < $total; $i++) {
 				$key = SQLSelectOne("SELECT * FROM samsungtv_codes WHERE ID='".(int)$samstv[$i]['ID']."'");
-				if($key['VALUE'] == "KEY_NUM"){ //выбор номера канала
-					$value = str_split($value);
-					$numcnt = count($value);
-					for($u = 0; $u < $numcnt; $u++){
-						$key['VALUE'] = "KEY_".$value[$u];
-						$sams->sendkey($key['DEVICE_ID'], $key['VALUE']);
-						usleep(200000);
-					}
-				}elseif($key['VALUE'] == "KEY_VOL"){
-					if(!$value)	$sams->sendkey($key['DEVICE_ID'], "KEY_MUTE");
-					else {
-						if($value > 0) $key['VALUE'] = "KEY_VOLUP";
-						else{
-							$key['VALUE'] = "KEY_VOLDOWN";
-							$value = abs($value);
-						}
-						for($i=1; $i<=$value; $i++){
+				$port = SQLSelectOne("SELECT PORT FROM samsungtv_devices WHERE ID='".(int)$key['DEVICE_ID']."'");
+				if($port['PORT']=='8001' or $port['PORT']=='8002'){
+					if($key['VALUE'] == "KEY_NUM"){ //выбор номера канала
+						$value = str_split($value);
+						$numcnt = count($value);
+						for($u = 0; $u < $numcnt; $u++){
+							$key['VALUE'] = "KEY_".$value[$u];
 							$sams->sendkey($key['DEVICE_ID'], $key['VALUE']);
 							usleep(200000);
 						}
+					}elseif($key['VALUE'] == "KEY_VOL"){
+						if(!$value)	$sams->sendkey($key['DEVICE_ID'], "KEY_MUTE");
+						else {
+							if($value > 0) $key['VALUE'] = "KEY_VOLUP";
+							else{
+								$key['VALUE'] = "KEY_VOLDOWN";
+								$value = abs($value);
+							}
+							for($i=1; $i<=$value; $i++){
+								$sams->sendkey($key['DEVICE_ID'], $key['VALUE']);
+								usleep(200000);
+							}
+						}
 					}
-				}
-				elseif($key['VALUE'] == "KEY_POWER"){
-					$status = SQLSelectOne('SELECT VALUE FROM samsungtv_data WHERE DEVICE_ID ="'.(int)$key['DEVICE_ID'].'" and KEY_ID = "ST"');
-					if(($value and !$status['VALUE']) or (!$value and $status['VALUE'])) $sams->sendkey($key['DEVICE_ID'], $key['VALUE']);
-				}
-				elseif($key['VALUE'] == "KEY_SETVOL"){
-					$sams->setvol($key['DEVICE_ID'], $value);
-				}
-				else{
-					if($key['VALUE'] == "KEY_CH"){
-						if($value == '1') $key['VALUE'] = "KEY_CHUP";
-						elseif($value == '0') $key['VALUE'] = "KEY_CH_LIST";
-						elseif($value == '-1') $key['VALUE'] = "KEY_CHDOWN";
+					elseif($key['VALUE'] == "KEY_POWER"){
+						$status = SQLSelectOne('SELECT VALUE FROM samsungtv_data WHERE DEVICE_ID ="'.(int)$key['DEVICE_ID'].'" and KEY_ID = "ST"');
+						if(($value and !$status['VALUE']) or (!$value and $status['VALUE'])) $sams->sendkey($key['DEVICE_ID'], $key['VALUE']);
 					}
-					elseif($key['VALUE'] == "KEY_NAVI"){
-						if($value == '0' or $value == "ENTER" or $value == "OK") $key['VALUE'] = "KEY_ENTER";
-						elseif($value == '1' or $value == "LEFT") $key['VALUE'] = "KEY_LEFT";
-						elseif($value == '2' or $value == "UP") $key['VALUE'] = "KEY_UP";
-						elseif($value == '3' or $value == "RIGHT") $key['VALUE'] = "KEY_RIGHT";
-						elseif($value == '4' or $value == "DOWN") $key['VALUE'] = "KEY_DOWN";
+					elseif($key['VALUE'] == "KEY_SETVOL"){
+						$sams->setvol($key['DEVICE_ID'], $value);
 					}
-					elseif($key['VALUE'] == "KEY_CLR"){
-						if($value == '0' or $value == "RED") $key['VALUE'] = "KEY_RED";
-						elseif($value == '1' or $value == "GREEN") $key['VALUE'] = "KEY_GREEN";
-						elseif($value == '2' or $value == "YELLOW") $key['VALUE'] = "KEY_YELLOW";
-						elseif($value == '3' or $value == "CYAN" or $value == "BLUE") $key['VALUE'] = "KEY_CYAN";
+					else{
+						if($key['VALUE'] == "KEY_CH"){
+							if($value == '1') $key['VALUE'] = "KEY_CHUP";
+							elseif($value == '0') $key['VALUE'] = "KEY_CH_LIST";
+							elseif($value == '-1') $key['VALUE'] = "KEY_CHDOWN";
+						}
+						elseif($key['VALUE'] == "KEY_NAVI"){
+							if($value == '0' or $value == "ENTER" or $value == "OK") $key['VALUE'] = "KEY_ENTER";
+							elseif($value == '1' or $value == "LEFT") $key['VALUE'] = "KEY_LEFT";
+							elseif($value == '2' or $value == "UP") $key['VALUE'] = "KEY_UP";
+							elseif($value == '3' or $value == "RIGHT") $key['VALUE'] = "KEY_RIGHT";
+							elseif($value == '4' or $value == "DOWN") $key['VALUE'] = "KEY_DOWN";
+						}
+						elseif($key['VALUE'] == "KEY_CLR"){
+							if($value == '0' or $value == "RED") $key['VALUE'] = "KEY_RED";
+							elseif($value == '1' or $value == "GREEN") $key['VALUE'] = "KEY_GREEN";
+							elseif($value == '2' or $value == "YELLOW") $key['VALUE'] = "KEY_YELLOW";
+							elseif($value == '3' or $value == "CYAN" or $value == "BLUE") $key['VALUE'] = "KEY_CYAN";
+						}
+						elseif($key['VALUE'] == "KEY_KEY"){
+							$key['VALUE'] = $value;
+						}
+						$sams->sendkey($key['DEVICE_ID'], $key['VALUE']);
 					}
-					elseif($key['VALUE'] == "KEY_KEY"){
-						$key['VALUE'] = $value;
+				}else{ //smartthings
+					if($key['VALUE'] == "volume"){
+						if(!$value)	$sams->ssendkey($key['DEVICE_ID'], "mute");
+						else {
+							if($value > 0) $key['VALUE'] = "volumeup";
+							else{
+								$key['VALUE'] = "volumedown";
+								$value = abs($value);
+							}
+							for($i=1; $i<=$value; $i++){
+								$sams->ssendkey($key['DEVICE_ID'], $key['VALUE']);
+							}
+						}
 					}
-					$sams->sendkey($key['DEVICE_ID'], $key['VALUE']);
+					elseif($key['VALUE'] == "power"){
+						$status = SQLSelectOne('SELECT VALUE FROM samsungtv_data WHERE DEVICE_ID ="'.(int)$key['DEVICE_ID'].'" and KEY_ID = "ST"');
+						if(($value and !$status['VALUE']) or (!$value and $status['VALUE'])) $sams->ssendkey($key['DEVICE_ID'], $key['VALUE']);
+					}
+					elseif($key['VALUE'] == "setvol"){
+						$sams->ssendkey($key['DEVICE_ID'], 'volume', $value);
+					}
+					elseif($key['VALUE'] == "mute"){
+						$status = SQLSelectOne('SELECT VALUE FROM samsungtv_data WHERE DEVICE_ID ="'.(int)$key['DEVICE_ID'].'" and KEY_ID = "ST"');
+						if(($value and !$status['VALUE']) or (!$value and $status['VALUE'])) $sams->ssendkey($key['DEVICE_ID'], $key['VALUE']);
+					}else{
+						if($key['VALUE'] == "channel"){
+							if($value == '1') $key['VALUE'] = "channelup";
+							elseif($value == '-1') $key['VALUE'] = "channeldown";
+						}
+						$sams->ssendkey($key['DEVICE_ID'], $key['VALUE']);
+					}
 				}
             }
         }
@@ -387,8 +447,7 @@ function setProperty($line, $value){
 		}
     }
 
-   function WriteLog($msg)
-   {
+   function WriteLog($msg){
       if ($this->debug) {
          DebMes($msg, $this->name);
       }
@@ -419,6 +478,7 @@ function setProperty($line, $value){
   SQLExec('DROP TABLE IF EXISTS samsungtv_devices');
   SQLExec('DROP TABLE IF EXISTS samsungtv_codes');
   SQLExec('DROP TABLE IF EXISTS samsungtv_apps');
+  unlink('./lib/samsungtvtizen.php');
   parent::uninstall();
  }
 /**

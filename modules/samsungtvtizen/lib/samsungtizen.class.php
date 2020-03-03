@@ -90,6 +90,7 @@ class samsung{
 				$wol = $this->wol($device["MAC"]);
 				return $wol;
 			}
+			$this->WriteLog("Sent Key: {$key} to: {$device["TITLE"]} error. Device off.");
 			return false;
 		} else {
 			$data = '{"method":"ms.remote.control","params":{"Cmd":"Click","DataOfCmd":"'.$key.'","Option":"false","TypeOfRemote":"SendRemoteKey"}}';
@@ -158,7 +159,7 @@ class samsung{
 		curl_setopt($ch, CURLOPT_HEADER, false);
 		$html = curl_exec($ch);
 		if (!$html)	return false;
-		curl_close($ch);	
+		curl_close($ch);
 		return $html;
 	}
 	
@@ -182,7 +183,7 @@ class samsung{
 		if(!$vol) return false;
 		$clean_xml = str_ireplace(['s:', 'u:'], '', $vol);
 		$xml = simplexml_load_string($clean_xml);
-		return $xml->Body->GetVolumeResponse->CurrentMute;
+		return $xml->Body->GetMuteResponse->CurrentMute;
 	}
 	function setmedia($id, $url){
 		$device = SQLSelectOne("SELECT * FROM samsungtv_devices WHERE ID='".$id."'");
@@ -196,12 +197,116 @@ class samsung{
 	}
 	
 	function dev($id){
-	$req = SQLSelect('SELECT * FROM samsungtv_devices');
-	foreach($req as $device){
-		if($id == $device['ID'] or $id == $device['TITLE'] or $id == $device['IP'])	return $device;
+		$req = SQLSelect('SELECT * FROM samsungtv_devices');
+		foreach($req as $device){
+			if($id == $device['ID'] or $id == $device['TITLE'] or $id == $device['IP'])	return $device;
+		}
+		$this->WriteLog('Неверное имя устройства');
 	}
-	debmes('STVPower: Неверное имя устройства');
-}
+
+	function smartthingsapi($token, $id, $command, $val=''){
+		$data ="{'commands': [{'component': 'main','capability': ";
+		switch($command){
+			case 'power':
+				$data = $data . "'switch','command': 'off'}]}";
+				break;
+			case 'refresh':
+				$data = $data . "'refresh','command': 'refresh'}]}";
+				break;
+			case 'volume':
+				$data = $data . "'audioVolume','command': 'setVolume','arguments': [$val]}]}";
+				break;
+			case 'volumeup':
+				$data = $data . "'audioVolume','command': 'volumeUp'}]}";
+				break;
+			case 'volumedown':
+				$data = $data . "'audioVolume','command': 'volumeDown'}]}";
+				break;
+			case 'channeldown':
+				$data = $data . "'tvChannel','command': 'channelDown'}]}";
+				break;
+			case 'channelup':
+				$data = $data . "'tvChannel','command': 'channelUp'}]}";
+				break;
+			case 'pause':
+				$data = $data . "'mediaPlayback','command': 'pause'}]}";
+				break;
+			case 'mute':
+				$data = $data . "'audioMute','command': 'mute'}]}";
+				break;
+			case 'unmute':
+				$data = $data . "'audioMute','command': 'unmute'}]}";
+				break;
+			case 'play':
+				$data = $data . "'mediaPlayback','command': 'play'}]}";
+				break;
+			case 'stop':
+				$data = $data . "'mediaPlayback','command': 'stop'}]}";
+				break;
+			case 'rewind':
+				$data = $data . "'mediaPlayback','command': 'rewind'}]}";
+				break;
+			case 'fast_forward':
+				$data = $data . "'mediaPlayback','command': 'fastForward'}]}";
+				break;
+			case 'next':
+				$data = $data . "'mediaPlayback','command': 'next'}]}";
+				break;
+			case 'previous':
+				$data = $data . "'mediaPlayback','command': 'previous'}]}";
+				break;
+		}
+		$api_url = "https://api.smartthings.com/v1";
+		$api_devices = $api_url . "/devices/";
+		$api_device = $api_devices . $id;
+		$device_status = $api_device . "/status";
+		$api_command = $api_device . "/commands";
+		$headers = Array("Authorization: Bearer $token");
+		if($command == 'status') $ch = curl_init($device_status);
+		else if($command == 'devices') $ch = curl_init($api_devices);
+		else {
+			$ch = curl_init($api_command);
+			curl_setopt($ch, CURLOPT_POST, 1);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+		}
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_HEADER, false);
+		$data = curl_exec($ch);
+		if (!$data)	return false;
+		curl_close($ch);
+		$data = json_decode($data, true);
+		return $data;		
+	}
+	
+	function ssendkey($id, $key, $val=''){
+		$device = SQLSelectOne("SELECT * FROM samsungtv_devices WHERE ID='".$id."'");
+		$status = SQLSelectOne('SELECT VALUE FROM samsungtv_data WHERE DEVICE_ID ="'.(int)$device['ID'].'" and KEY_ID = "ST"');
+		if(!$status['VALUE']){
+			if($key == "power") {
+				$wol = $this->wol($device["MAC"]);
+				return $wol;
+			}
+			$this->WriteLog("Sent Key: {$key} to: {$device["TITLE"]} error. Device off.");
+			return false;
+		} else {
+			if($key == 'mute'){
+				$mute = $this->sget($id);
+				if($mute['audioVolume']['mute']['value'] == 'mute') $key = 'unmute';
+			}
+			$this->smartthingsapi($device['TOKEN'], $device['PORT'], $key, $val);
+			$this->WriteLog("Sent Key: {$key} to: {$device["TITLE"]} over SmartThings");
+			return true;
+		}
+	}
+	
+	function sget($id){
+		$device = SQLSelectOne("SELECT * FROM samsungtv_devices WHERE ID='".$id."'");
+		$this->smartthingsapi($device['TOKEN'], $device['PORT'], 'refresh');
+		$data = $this->smartthingsapi($device['TOKEN'], $device['PORT'], 'status');
+		$data = $data['components']['main'];
+		return $data;
+	}
 	
 
 	//Функции кодирования/декодирования вебсокетов

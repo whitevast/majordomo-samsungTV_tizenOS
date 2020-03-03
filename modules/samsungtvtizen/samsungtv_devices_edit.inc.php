@@ -14,31 +14,58 @@
   if ($this->tab=='') {
    $rec['TITLE']=gr('title');
    $rec['IP']=gr('ip');
-   $rec['PORT']=gr('alt_port') ? '8001':'8002';
+   $rec['PORT']='8002';
+   if(gr('alt_port')) $rec['PORT']='8001';
+   if(gr('smrtthgs')){
+	   $rec['TOKEN']=gr('token');
+	   $rec['PORT']=gr('id_tv');
+   }
    if ($rec['TITLE']=='' or $rec['IP']=='') {
 	$out['ERR_ALERT']=($rec['TITLE']=='')?"Введите название телевизора!":"Введите адрес телевизора!";
     $ok=0;
    }
    if($ok){
-	 $rec['TOKEN'] = $sams->gettoken($rec['IP'],  $rec['PORT']);
-	 if(!$rec['TOKEN']){
-		 $ok=0;
-		 $out['ERR_ALERT']="Неправильный адрес телевизора или телевизор выключен!";
-	 }
-	 else if($rec['TOKEN'] == -1){
-		$ok=0;
-		$out['ERR_ALERT']="Соединение установлено, но токен не был получен. См. лог-файл xxx-xx-xx_samsungtvtizen.log";
-	}
-	 else {
-		$url = "http://".$rec['IP'].":9197/dmr";
-		$modeldata = new SimpleXMLElement(file_get_contents($url));
-		$rec['SERIAL'] =  $modeldata->device->serialNumber;
-		$rec['MODEL'] =  $modeldata->device->modelName;
-		$arp = (IsWindowsOS())? 'for /f "tokens=2" %i in ('."'arp -a ".$rec['IP']." ^| findstr ..-..-..-..-..-..') do @echo %i":"arp ".$rec['IP']." | grep -v addr | awk '{print $3}'";
-		$rec['MAC'] = shell_exec($arp); //определяем mac
+	    if(!gr('smrtthgs')) $rec['TOKEN'] = $sams->gettoken($rec['IP'], $rec['PORT']);
+		else {
+			$device = $sams->smartthingsapi($rec['TOKEN'], $rec['PORT'], 'devices');
+			$ok=0;
+			$out['ERR_ALERT']="Данный ID не найден в ваших устройствах SmartThings!";
+			foreach ($device['items'] as $dev){
+				if ($dev['deviceId'] == $rec['PORT']){
+					$sams->smartthingsapi($rec['TOKEN'], $rec['PORT'], 'refresh');
+					$device = $sams->smartthingsapi($rec['TOKEN'], $rec['PORT'], 'status');
+					if (!isset($device['components']['main']['switch']['switch']['value'])){
+						$out['ERR_ALERT']="Телевизор не имеет функции управления через SmartThings!";
+					}
+					else{
+						$rec['MODEL'] = $device['components']['main']['ocf']['mnmo']['value'];
+						$arp = (IsWindowsOS())? 'for /f "tokens=2" %i in ('."'arp -a ".$rec['IP']." ^| findstr ..-..-..-..-..-..') do @echo %i":"sudo arp ".$rec['IP']."| grep -v addr | awk '{print $3}'";
+						$rec['MAC'] = exec($arp); //определяем mac
+						$ok=1;
+						break;
+					}
+				}
+			}
+		}
+		if(!$rec['TOKEN']){
+			$ok=0;
+			$out['ERR_ALERT']="Неправильный адрес телевизора или телевизор выключен!";
+		}
+		else if($rec['TOKEN'] == -1){
+			$ok=0;
+			$out['ERR_ALERT']="Соединение установлено, но токен не был получен. См. лог-файл ".date("Y-m-d")."_samsungtvtizen.log";
+		}
+		if($ok and !gr('smrtthgs')) {
+			$url = "http://".$rec['IP'].":9197/dmr";
+			$modeldata = new SimpleXMLElement(file_get_contents($url));
+			$rec['SERIAL'] = $modeldata->device->serialNumber;
+			$rec['MODEL'] = $modeldata->device->modelName;
+			$arp = (IsWindowsOS())? 'for /f "tokens=2" %i in ('."'arp -a ".$rec['IP']." ^| findstr ..-..-..-..-..-..') do @echo %i":"sudo arp ".$rec['IP']."| grep -v addr | awk '{print $3}'";
+			$rec['MAC'] = exec($arp); //определяем mac
+		}
 	}
    }
-  }
+
    
   
   //UPDATING RECORD
@@ -48,18 +75,20 @@
     } else {
      $new_rec=1;
      $rec['ID']=SQLInsert($table_name, $rec); // adding new record
-	 $wsdata = $sams->getapps($rec['ID']);
-	 $app['DEVICE_ID'] = $rec['ID'];
-	 $app['TITLE'] = 'Internet';
-	 $app['APPID'] = 'URL';
-	 SQLInsert('samsungtv_apps', $app);
-	 for ($i=0; $i<count($wsdata['data']['data']); $i++){
-		 if($wsdata['data']['data'][$i]['name'] == 'Internet') continue;
-		 $app['TITLE'] = $wsdata['data']['data'][$i]['name']; //название приложения
-		 $app['APPID'] = $wsdata['data']['data'][$i]['appId']; //ID приложения
+	 if(!gr('smrtthgs')){
+		 $wsdata = $sams->getapps($rec['ID']);
+		 $app['DEVICE_ID'] = $rec['ID'];
+		 $app['TITLE'] = 'Internet';
+		 $app['APPID'] = 'URL';
 		 SQLInsert('samsungtv_apps', $app);
-	 }
-	 $codes = [['KEY_KEY','Команда'],
+		 for ($i=0; $i<count($wsdata['data']['data']); $i++){
+			 if($wsdata['data']['data'][$i]['name'] == 'Internet') continue;
+			 $app['TITLE'] = $wsdata['data']['data'][$i]['name']; //название приложения
+			 $app['APPID'] = $wsdata['data']['data'][$i]['appId']; //ID приложения
+			 SQLInsert('samsungtv_apps', $app);
+		 }
+	}
+	 $codes = (!gr('smrtthgs'))? [['KEY_KEY','Команда'],
 		  ['KEY_POWER','ВКЛ/ВЫКЛ'],
 		  ['KEY_VOL','Управление громкостью'],
 		  ['KEY_SETVOL','Установка громкости'],
@@ -73,7 +102,21 @@
 		  ['KEY_HDMI','HDMI'],
 		  ['KEY_HDMI1','HDMI1'],
 	      ['KEY_NUM','Цифровые кнопки'],
-		  ['KEY_CLR','Цветные кнопки']];
+		  ['KEY_CLR','Цветные кнопки']]
+		  :
+		  [['power','ВКЛ/ВЫКЛ'],
+		  ['volume','Управление громкостью'],
+		  ['setvol','Установка громкости'],
+		  ['channel','Управление каналами'],
+		  ['stop','Стоп'],
+		  ['play','Воспроизведение'],
+		  ['pause','Пауза'],
+//		  ['KEY_HDMI','HDMI'],
+//		  ['KEY_HDMI1','HDMI1'],
+		  ['next','Следующий'],
+		  ['previous','Предыдущий'],
+		  ['fast_forward','Перемотка вперед'],
+		  ['rewind','Перемотка назад']];
 		  
 	  $code['DEVICE_ID'] = $rec['ID'];
 	  for ($i=0; $i<count($codes); $i++){
@@ -82,8 +125,8 @@
 		  SQLInsert('samsungtv_codes', $code);
 	  }
 	  $data = [['Статус','ST'],
-		  ['Громкость','VOL'],
-		  ['Активное приложение','APP']];
+		  ['Громкость','VOL']];
+	  if(!gr('smrtthgs')) array_push($data, ['Активное приложение','APP']);
 	  $dataadd['DEVICE_ID'] = $rec['ID'];
 	  for ($i=0; $i<count($data); $i++){
 		  $dataadd['TITLE'] = $data[$i][0];
@@ -156,7 +199,8 @@
    global $test_id;
    if ($test_id) {
 		$key = SQLSelectOne("SELECT * FROM samsungtv_codes WHERE ID='".(int)$test_id."'")['VALUE'];
-		$sams->sendkey($rec["ID"], $key);
+		if($rec["PORT"]=='8001' or $rec["PORT"]=='8002') $sams->sendkey($rec["ID"], $key);
+		else $sams->ssendkey($rec["ID"], $key);
 		$this->redirect("?data_source=&view_mode=edit_samsungtv_devices&id=".$rec['ID']."&tab=codes");
 	}
 	$properties=SQLSelect("SELECT * FROM samsungtv_codes WHERE DEVICE_ID='".$rec['ID']."' ORDER BY ID");
