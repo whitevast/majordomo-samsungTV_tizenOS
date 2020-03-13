@@ -17,9 +17,9 @@ class samsung{
 		}
     }
 	
-	function connecttv($ip, $port, $token=''){ //подключение к телевизору
-		$name = utf8_decode(base64_encode('MajorDoMo'));
-		$path = "/api/v2/channels/samsung.remote.control?name=$name&token=$token"; //
+	function connecttv($ip, $port, $token){ //подключение к телевизору
+		$name = "TWFqb3JEb01v";
+		$path = "/api/v2/channels/samsung.remote.control?name=$name&token=$token";
 		
 		if($port == '8001'){
 			$protocol = 'tcp';
@@ -34,13 +34,11 @@ class samsung{
 				]
 			]);
 		}
-		//print "$protocol://$ip:$port";
 		@$socket = stream_socket_client("$protocol://$ip:$port", $errorNumber, $errorString, 1, STREAM_CLIENT_CONNECT, $context);
-
 		if (!$socket) {
-			$this->WriteLog("Error connect to: {$ip}");
+			$this->WriteLog("Ошибка подключения к: {$ip}");
 			return false;
-		} else {       
+		} else {
 			$head = "GET " . $path . " HTTP/1.1\r\n" .
 				"Host: localhost\r\n" .
 				"Upgrade: websocket\r\n" .
@@ -51,22 +49,24 @@ class samsung{
 			$headers = fread($socket, 2000);
 			//echo $headers;
 			usleep(500);
-			if($token !='') fread($socket, 2000);
+			$wsdata = fread($socket, 2000);
+			$wsdata = $this->hybi10Decode($wsdata);
+			$data = json_decode($wsdata, true);
+			if($token !=''){
+				if(!empty($data['data']['token'])){
+					$update = SQLSelectOne("SELECT * FROM samsungtv_devices WHERE IP='$ip' AND SERIAL!=''");
+					$update['TOKEN'] = $data['data']['token'];
+					SQLUpdate('samsungtv_devices', $update);
+					$this->WriteLog("Новый токен: {$data['data']['token']}. Токен обновлен.");
+				}
+			}
+			else{
+				$this->WriteLog("{$ip}: {$wsdata}");
+				if(!empty($data['data']['token'])) return $data['data']['token'];
+				else return -1;
+			}
 			return $socket;
 		}
-	}
-	
-	function gettoken($ip, $port){
-		$socket = $this->connecttv($ip, $port);
-		if (!$socket) return false;
-		$wsdata = fread($socket, 2000);
-		fclose($socket);
-		$wsdata = $this->hybi10Decode($wsdata);
-		$this->WriteLog("{$ip}: {$wsdata}");
-		$data = json_decode($wsdata, true);
-		$token = $data['data']['token'];
-		if(!$token) return -1;
-		return $token;
 	}
 
 	function getapps($id){
@@ -90,13 +90,13 @@ class samsung{
 				$wol = $this->wol($device["MAC"]);
 				return $wol;
 			}
-			$this->WriteLog("Sent Key: {$key} to: {$device["TITLE"]} error. Device off.");
+			$this->WriteLog("Ошибка отправки ключа {$key} на: {$device["TITLE"]}. Устройство отключено.");
 			return false;
 		} else {
 			$data = '{"method":"ms.remote.control","params":{"Cmd":"Click","DataOfCmd":"'.$key.'","Option":"false","TypeOfRemote":"SendRemoteKey"}}';
 			fwrite($socket,$this->hybi10Encode($data));
 			fclose($socket);
-			$this->WriteLog("Sent Key: {$key} to: {$device["TITLE"]}");
+			$this->WriteLog("Отправлен ключ: {$key} на: {$device["TITLE"]}");
 			return true;
 		}
 	}
@@ -108,7 +108,7 @@ class samsung{
 		$data = '{"method":"ms.channel.emit","params":{"event":"ed.apps.launch","to":"host","data":{"appId":"org.tizen.browser","action_type":"NATIVE_LAUNCH","metaTag":"'.$url.'"}}}';
 		fwrite($socket,$this->hybi10Encode($data));
 		fclose($socket);
-		$this->WriteLog("Sent URL: {$url} to: {$device["TITLE"]}");
+		$this->WriteLog("Отправлен URL: {$url} на: {$device["TITLE"]}");
 		return true;	
 	}
 
@@ -135,7 +135,7 @@ class samsung{
 			if ($options !== false) {
 				socket_sendto($sock, $magicPacket, strlen($magicPacket), 0, '255.255.255.255', 9);
 				socket_close($sock);
-				$this->WriteLog("Sent MagicPacket to: {$mac}");
+				$this->WriteLog("Отправлен MagicPacket на: {$mac}");
 				return true;
 			}
 		}
@@ -174,7 +174,7 @@ class samsung{
 	function setvol($id, $value){
 		$device = SQLSelectOne("SELECT * FROM samsungtv_devices WHERE ID='".$id."'");
 		if(!$this->soap($device["IP"], 'SetVolume', '<Channel>Master</Channel><DesiredVolume>'.$value.'</DesiredVolume>', 'RenderingControl')) return false;
-		$this->WriteLog("Volume set to {$value} to device: {$device["TITLE"]}");
+		$this->WriteLog("Громкость на {$device["TITLE"]} уствновлена на {$value}.");
 		return true;
 	}
 	function getmute($id){
@@ -287,7 +287,7 @@ class samsung{
 				$wol = $this->wol($device["MAC"]);
 				return $wol;
 			}
-			$this->WriteLog("Sent Key: {$key} to: {$device["TITLE"]} error. Device off.");
+			$this->WriteLog("Ошибка отправки ключа {$key} на: {$device["TITLE"]}. Устройство отключено.");
 			return false;
 		} else {
 			if($key == 'mute'){
@@ -295,7 +295,7 @@ class samsung{
 				if($mute['audioVolume']['mute']['value'] == 'mute') $key = 'unmute';
 			}
 			$this->smartthingsapi($device['TOKEN'], $device['PORT'], $key, $val);
-			$this->WriteLog("Sent Key: {$key} to: {$device["TITLE"]} over SmartThings");
+			$this->WriteLog("Отправлен ключ: {$key} на: {$device["TITLE"]} через SmartThings");
 			return true;
 		}
 	}

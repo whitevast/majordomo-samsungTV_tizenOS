@@ -25,7 +25,7 @@
     $ok=0;
    }
    if($ok){
-	    if(!gr('smrtthgs')) $rec['TOKEN'] = $sams->gettoken($rec['IP'], $rec['PORT']);
+	    if(!gr('smrtthgs')) $rec['TOKEN'] = $sams->connecttv($rec['IP'], $rec['PORT'], '');
 		else {
 			$device = $sams->smartthingsapi($rec['TOKEN'], $rec['PORT'], 'devices');
 			$ok=0;
@@ -155,6 +155,7 @@
 	}
    }
    $dtable=SQLSelect("SELECT * FROM samsungtv_data WHERE DEVICE_ID='".$rec['ID']."' ORDER BY ID");
+   
    $total=count($dtable);
    for($i=0;$i<$total;$i++) {
     if ($dtable[$i]['ID']==$new_id) continue;
@@ -166,6 +167,10 @@
       $dtable[$i]['LINKED_OBJECT']=trim(${'linked_object'.$dtable[$i]['ID']});
       global ${'linked_property'.$dtable[$i]['ID']};
       $dtable[$i]['LINKED_PROPERTY']=trim(${'linked_property'.$dtable[$i]['ID']});
+	  	// Если юзер удалил привязанные свойство и метод, но забыл про объект, то очищаем его.
+	  if ($dtable[$i]['LINKED_OBJECT'] != '' && ($dtable[$i]['LINKED_PROPERTY'] == '' && $dtable[$i]['LINKED_METHOD'] == '')) {
+	  	$dtable[$i]['LINKED_OBJECT'] = '';
+	  }
       SQLUpdate('samsungtv_data', $dtable[$i]);
       if ($old_linked_object && $old_linked_object!=$dtable[$i]['LINKED_OBJECT'] && $old_linked_property && $old_linked_property!=$dtable[$i]['LINKED_PROPERTY']) {
        removeLinkedProperty($old_linked_object, $old_linked_property, $this->name);
@@ -174,6 +179,7 @@
        addLinkedProperty($dtable[$i]['LINKED_OBJECT'], $dtable[$i]['LINKED_PROPERTY'], $this->name);
       }
      }
+	 $dtable[$i]['SDEVICE_TYPE'] = 'tv';
    }
    $out['DTABLE']=$dtable;   
   }
@@ -201,7 +207,8 @@
 		$key = SQLSelectOne("SELECT * FROM samsungtv_codes WHERE ID='".(int)$test_id."'")['VALUE'];
 		if($rec["PORT"]=='8001' or $rec["PORT"]=='8002') $sams->sendkey($rec["ID"], $key);
 		else $sams->ssendkey($rec["ID"], $key);
-		$this->redirect("?data_source=&view_mode=edit_samsungtv_devices&id=".$rec['ID']."&tab=codes");
+		$test_id = 0;
+		//$this->redirect("?data_source=&view_mode=edit_samsungtv_devices&id=".$rec['ID']."&tab=codes");
 	}
 	$properties=SQLSelect("SELECT * FROM samsungtv_codes WHERE DEVICE_ID='".$rec['ID']."' ORDER BY ID");
     $total=count($properties);
@@ -217,6 +224,10 @@
       $properties[$i]['LINKED_OBJECT']=trim(${'linked_object'.$properties[$i]['ID']});
       global ${'linked_property'.$properties[$i]['ID']};
       $properties[$i]['LINKED_PROPERTY']=trim(${'linked_property'.$properties[$i]['ID']});
+      // Если юзер удалил привязанные свойство и метод, но забыл про объект, то очищаем его.
+      if ($properties[$i]['LINKED_OBJECT'] != '' && ($properties[$i]['LINKED_PROPERTY'] == '' && $properties[$i]['LINKED_METHOD'] == '')) {
+          $properties[$i]['LINKED_OBJECT'] = '';
+      }
       SQLUpdate('samsungtv_codes', $properties[$i]);
       if ($old_linked_object && $old_linked_object!=$properties[$i]['LINKED_OBJECT'] && $old_linked_property && $old_linked_property!=$properties[$i]['LINKED_PROPERTY']) {
        removeLinkedProperty($old_linked_object, $old_linked_property, $this->name);
@@ -225,6 +236,7 @@
        addLinkedProperty($properties[$i]['LINKED_OBJECT'], $properties[$i]['LINKED_PROPERTY'], $this->name);
       }
      }
+	 $properties[$i]['SDEVICE_TYPE'] = 'tv';
    }
    $out['PROPERTIES']=$properties;   
   }
@@ -276,6 +288,10 @@
       $appsdata[$i]['LINKED_OBJECT']=trim(${'linked_object'.$appsdata[$i]['ID']});
       global ${'linked_property'.$appsdata[$i]['ID']};
       $appsdata[$i]['LINKED_PROPERTY']=trim(${'linked_property'.$appsdata[$i]['ID']});
+	  	  	// Если юзер удалил привязанные свойство и метод, но забыл про объект, то очищаем его.
+	  if ($appsdata[$i]['LINKED_OBJECT'] != '' && ($appsdata[$i]['LINKED_PROPERTY'] == '' && $appsdata[$i]['LINKED_METHOD'] == '')) {
+	  	$appsdata[$i]['LINKED_OBJECT'] = '';
+	  }
       SQLUpdate('samsungtv_apps', $appsdata[$i]);
       if ($old_linked_object && $old_linked_object!=$appsdata[$i]['LINKED_OBJECT'] && $old_linked_property && $old_linked_property!=$appsdata[$i]['LINKED_PROPERTY']) {
        removeLinkedProperty($old_linked_object, $old_linked_property, $this->name);

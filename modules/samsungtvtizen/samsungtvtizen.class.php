@@ -202,22 +202,19 @@ function usual(&$out) {
   $rec=SQLSelectOne("SELECT * FROM samsungtv_devices WHERE ID='$id'");
   // some action for related tables
   SQLExec("DELETE FROM samsungtv_devices WHERE ID='".$rec['ID']."'");
-    $properties=SQLSelect("SELECT * FROM samsungtv_data WHERE DEVICE_ID='".$rec['ID']."' ORDER BY ID");
-    $total=count($properties);
-    for($i=0;$i<$total;$i++) {
-		if ($properties[$i]['LINKED_PROPERTY'] != '')  removeLinkedProperty($properties[$i]['LINKED_OBJECT'], $properties[$i]['LINKED_PROPERTY'], $this->name);
+    $properties=SQLSelect("SELECT * FROM samsungtv_data WHERE DEVICE_ID='".$rec['ID']."' AND LINKED_OBJECT != '' AND LINKED_PROPERTY != ''");
+    foreach($properties as $prop) {
+		removeLinkedProperty($prop['LINKED_OBJECT'], $prop['LINKED_PROPERTY'], $this->name);
 	}
   SQLExec("DELETE FROM samsungtv_data WHERE DEVICE_ID='".$rec['ID']."'");
-  	$properties=SQLSelect("SELECT * FROM samsungtv_codes WHERE DEVICE_ID='".$rec['ID']."' ORDER BY ID");
-    $total=count($properties);
-    for($i=0;$i<$total;$i++) {
-		if ($properties[$i]['LINKED_PROPERTY'] != '')  removeLinkedProperty($properties[$i]['LINKED_OBJECT'], $properties[$i]['LINKED_PROPERTY'], $this->name);
+  	$properties=SQLSelect("SELECT * FROM samsungtv_codes WHERE DEVICE_ID='".$rec['ID']."' AND LINKED_OBJECT != '' AND LINKED_PROPERTY != ''");
+     foreach($properties as $prop) {
+		removeLinkedProperty($prop['LINKED_OBJECT'], $prop['LINKED_PROPERTY'], $this->name);
 	}
   SQLExec("DELETE FROM samsungtv_codes WHERE DEVICE_ID='".$rec['ID']."'");
-  	$properties=SQLSelect("SELECT * FROM samsungtv_apps WHERE DEVICE_ID='".$rec['ID']."' ORDER BY ID");
-    $total=count($properties);
-    for($i=0;$i<$total;$i++) {
-		if ($properties[$i]['LINKED_PROPERTY'] != '')  removeLinkedProperty($properties[$i]['LINKED_OBJECT'], $properties[$i]['LINKED_PROPERTY'], $this->name);
+  	$properties=SQLSelect("SELECT * FROM samsungtv_apps WHERE DEVICE_ID='".$rec['ID']."' AND LINKED_OBJECT != '' AND LINKED_PROPERTY != ''");
+     foreach($properties as $prop) {
+		removeLinkedProperty($prop['LINKED_OBJECT'], $prop['LINKED_PROPERTY'], $this->name);
 	}
   SQLExec("DELETE FROM samsungtv_apps WHERE DEVICE_ID='".$rec['ID']."'");
  }
@@ -264,6 +261,11 @@ function usual(&$out) {
 				$datast['UPDATED'] = date('Y-m-d H:i:s');
 				SQLUpdate('samsungtv_data', $datast);
 				$this->setProperty($datast, $datast['VALUE']);
+				//При включении подключаемся к ТВ, чтобы токен не устаревал
+				$socket = $sams->connecttv($val['IP'], $val['PORT'], $val['TOKEN']);
+				$this->WriteLog("TV ON");
+				print "ON";
+				fclose($socket);
 			}
 			if($datavol['VALUE'] != $volume){
 				$datavol['VALUE'] = $volume;
