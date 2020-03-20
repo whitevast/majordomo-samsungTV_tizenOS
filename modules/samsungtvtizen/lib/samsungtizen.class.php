@@ -54,11 +54,13 @@ class samsung{
 			$data = json_decode($wsdata, true);
 			if($token !=''){
 				if(!empty($data['data']['token'])){
+					$this->WriteLog("{$ip}: {$wsdata}");
 					$update = SQLSelectOne("SELECT * FROM samsungtv_devices WHERE IP='$ip' AND SERIAL!=''");
 					$update['TOKEN'] = $data['data']['token'];
 					SQLUpdate('samsungtv_devices', $update);
 					$this->WriteLog("Новый токен: {$data['data']['token']}. Токен обновлен.");
 				}
+				else $this->WriteLog("Выполнено подключение к {$ip} с токеном {$token}.");
 			}
 			else{
 				$this->WriteLog("{$ip}: {$wsdata}");
