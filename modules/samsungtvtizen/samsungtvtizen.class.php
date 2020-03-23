@@ -263,8 +263,6 @@ function usual(&$out) {
 				$this->setProperty($datast, $datast['VALUE']);
 				//При включении подключаемся к ТВ, чтобы токен не устаревал
 				$socket = $sams->connecttv($val['IP'], $val['PORT'], $val['TOKEN']);
-				$this->WriteLog("TV ON");
-				print "ON";
 				fclose($socket);
 			}
 			if($datavol['VALUE'] != $volume){
@@ -478,6 +476,7 @@ function setProperty($line, $value){
 	$this->delete_samsungtv_devices($id[$i]['ID']);
  }
   SQLExec('DROP TABLE IF EXISTS samsungtv_devices');
+  SQLExec('DROP TABLE IF EXISTS samsungtv_data');
   SQLExec('DROP TABLE IF EXISTS samsungtv_codes');
   SQLExec('DROP TABLE IF EXISTS samsungtv_apps');
   unlink('./lib/samsungtvtizen.php');
