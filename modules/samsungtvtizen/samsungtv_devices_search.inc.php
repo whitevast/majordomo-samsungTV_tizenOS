@@ -2,6 +2,7 @@
 /*
 * @version 0.1 (wizard)
 */
+ $sams = new samsung($this->debug);
  global $session;
   if ($this->owner->name=='panel') {
    $out['CONTROLPANEL']=1;
@@ -32,7 +33,10 @@
 	   if($res[$i]['PORT'] == '8001' or $res[$i]['PORT'] == '8002'){
 		   $app = SQLSelectOne("SELECT TITLE FROM samsungtv_apps WHERE DEVICE_ID='".$res[$i]['ID']."' AND STATE='1'");
 		   if($app['TITLE'] == '') $app['TITLE'] = "ТВ, HDMI или DLNA";
-	   }else $app['TITLE'] = "Нет данных (SmartThings)";
+	   }else {
+		   $appa = explode(".", $sams->sget($res[$i]['ID'])['tvChannel']['tvChannelName']['value']);
+		   $app['TITLE'] = $appa['1'];// "Нет данных (SmartThings)";
+	   }
 	   $res[$i]['APP'] = $app['TITLE'];
     // some action for every record if required
    }

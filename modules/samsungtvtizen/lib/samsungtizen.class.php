@@ -261,7 +261,8 @@ class samsung{
 		$api_url = "https://api.smartthings.com/v1";
 		$api_devices = $api_url . "/devices/";
 		$api_device = $api_devices . $id;
-		$device_status = $api_device . "/status";
+		$device_status = $api_device . "/components/main/status";
+		$device_health = $api_device . "/health"; ////////////////////Не используется
 		$api_command = $api_device . "/commands";
 		$headers = Array("Authorization: Bearer $token");
 		if($command == 'status') $ch = curl_init($device_status);
@@ -306,7 +307,6 @@ class samsung{
 		$device = SQLSelectOne("SELECT * FROM samsungtv_devices WHERE ID='".$id."'");
 		$this->smartthingsapi($device['TOKEN'], $device['PORT'], 'refresh');
 		$data = $this->smartthingsapi($device['TOKEN'], $device['PORT'], 'status');
-		$data = $data['components']['main'];
 		return $data;
 	}
 	

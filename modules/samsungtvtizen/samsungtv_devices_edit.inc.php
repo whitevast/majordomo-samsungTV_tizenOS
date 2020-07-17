@@ -34,11 +34,12 @@
 				if ($dev['deviceId'] == $rec['PORT']){
 					$sams->smartthingsapi($rec['TOKEN'], $rec['PORT'], 'refresh');
 					$device = $sams->smartthingsapi($rec['TOKEN'], $rec['PORT'], 'status');
-					if (!isset($device['components']['main']['switch']['switch']['value'])){
+					print_r($device);
+					if (!isset($device['switch']['switch']['value'])){
 						$out['ERR_ALERT']="Телевизор не имеет функции управления через SmartThings!";
 					}
 					else{
-						$rec['MODEL'] = $device['components']['main']['ocf']['mnmo']['value'];
+						$rec['MODEL'] = $device['ocf']['mnmo']['value'];
 						$arp = (IsWindowsOS())? 'for /f "tokens=2" %i in ('."'arp -a ".$rec['IP']." ^| findstr ..-..-..-..-..-..') do @echo %i":"sudo arp ".$rec['IP']."| grep -v addr | awk '{print $3}'";
 						$rec['MAC'] = exec($arp); //определяем mac
 						$ok=1;
@@ -207,8 +208,7 @@
 		$key = SQLSelectOne("SELECT * FROM samsungtv_codes WHERE ID='".(int)$test_id."'")['VALUE'];
 		if($rec["PORT"]=='8001' or $rec["PORT"]=='8002') $sams->sendkey($rec["ID"], $key);
 		else $sams->ssendkey($rec["ID"], $key);
-		$test_id = 0;
-		//$this->redirect("?data_source=&view_mode=edit_samsungtv_devices&id=".$rec['ID']."&tab=codes");
+		$this->redirect("?data_source=&view_mode=edit_samsungtv_devices&id=".$rec['ID']."&tab=codes");
 	}
 	$properties=SQLSelect("SELECT * FROM samsungtv_codes WHERE DEVICE_ID='".$rec['ID']."' ORDER BY ID");
     $total=count($properties);
