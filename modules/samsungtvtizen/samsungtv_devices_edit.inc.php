@@ -245,6 +245,13 @@
   if ($this->tab=='apps') {
    //dataset2
    $new_id=0;
+   if ($this->mode=='update') {
+    global $title_new;
+	if ($title_new) {
+	 $prop=array('TITLE'=>$title_new,'DEVICE_ID'=>$rec['ID']);
+	 $new_id=SQLInsert('samsungtv_apps',$prop);
+	}
+   }
    global $delete_id;
    if ($delete_id) {
 	$properties=SQLSelectOne("SELECT * FROM samsungtv_apps WHERE ID='".(int)$delete_id."'");
@@ -284,6 +291,9 @@
     if ($this->mode=='update') {
 	  $old_linked_object=$appsdata[$i]['LINKED_OBJECT'];
       $old_linked_property=$appsdata[$i]['LINKED_PROPERTY'];
+	  global ${'value'.$appsdata[$i]['ID']};
+	  if($appsdata[$i]['appid'] != ${'value'.$appsdata[$i]['ID']}) $appsdata[$i]['APPID']=trim(${'value'.$appsdata[$i]['ID']});
+	  print ${'value'.$appsdata[$i]['ID']};
       global ${'linked_object'.$appsdata[$i]['ID']};
       $appsdata[$i]['LINKED_OBJECT']=trim(${'linked_object'.$appsdata[$i]['ID']});
       global ${'linked_property'.$appsdata[$i]['ID']};
