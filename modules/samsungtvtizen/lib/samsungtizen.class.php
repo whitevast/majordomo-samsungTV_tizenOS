@@ -298,7 +298,7 @@ class samsung{
 				if($mute['audioVolume']['mute']['value'] == 'mute') $key = 'unmute';
 			}
 			$this->smartthingsapi($device['TOKEN'], $device['PORT'], $key, $val);
-			$this->WriteLog("Отправлен ключ: {$key} на: {$device["TITLE"]} через SmartThings");
+			$this->WriteLog("Отправлен ключ '{$key}' на '{$device["TITLE"]}' через SmartThings");
 			return true;
 		}
 	}

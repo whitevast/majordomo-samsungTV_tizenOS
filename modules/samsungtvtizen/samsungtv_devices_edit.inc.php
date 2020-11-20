@@ -14,7 +14,8 @@
   if ($this->tab=='') {
    $rec['TITLE']=gr('title');
    $rec['IP']=gr('ip');
-   $rec['PORT']='8002';
+   if(!isset($rec['PORT'])) $rec['PORT']='8002';
+   if(!isset($rec['TOKEN'])) $rec['TOKEN']='';
    if(gr('alt_port')) $rec['PORT']='8001';
    if(gr('smrtthgs')){
 	   $rec['TOKEN']=gr('token');
@@ -25,7 +26,7 @@
     $ok=0;
    }
    if($ok){
-	    if(!gr('smrtthgs')) $rec['TOKEN'] = $sams->connecttv($rec['IP'], $rec['PORT'], '');
+	    if($rec['PORT'] == '8001' or $rec['PORT'] == '8002') $rec['TOKEN'] = $sams->connecttv($rec['IP'], $rec['PORT'], '');
 		else {
 			$device = $sams->smartthingsapi($rec['TOKEN'], $rec['PORT'], 'devices');
 			$ok=0;
@@ -34,7 +35,7 @@
 				if ($dev['deviceId'] == $rec['PORT']){
 					$sams->smartthingsapi($rec['TOKEN'], $rec['PORT'], 'refresh');
 					$device = $sams->smartthingsapi($rec['TOKEN'], $rec['PORT'], 'status');
-					print_r($device);
+					//print_r($device);
 					if (!isset($device['switch']['switch']['value'])){
 						$out['ERR_ALERT']="Телевизор не имеет функции управления через SmartThings!";
 					}
@@ -56,7 +57,7 @@
 			$ok=0;
 			$out['ERR_ALERT']="Соединение установлено, но токен не был получен. См. лог-файл ".date("Y-m-d")."_samsungtvtizen.log";
 		}
-		if($ok and !gr('smrtthgs')) {
+		if($ok and ($rec['PORT'] == '8001' or $rec['PORT'] == '8002')) {
 			$url = "http://".$rec['IP'].":9197/dmr";
 			$modeldata = new SimpleXMLElement(file_get_contents($url));
 			$rec['SERIAL'] = $modeldata->device->serialNumber;
@@ -125,9 +126,9 @@
 		  $code['VALUE'] = $codes[$i][0];
 		  SQLInsert('samsungtv_codes', $code);
 	  }
-	  $data = [['Статус','ST'],
-		  ['Громкость','VOL']];
-	  if(!gr('smrtthgs')) array_push($data, ['Активное приложение','APP']);
+	  $data = 	[['Статус','ST'],
+				['Громкость','VOL'],
+				['Активное приложение','APP']];
 	  $dataadd['DEVICE_ID'] = $rec['ID'];
 	  for ($i=0; $i<count($data); $i++){
 		  $dataadd['TITLE'] = $data[$i][0];

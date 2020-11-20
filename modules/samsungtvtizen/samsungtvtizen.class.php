@@ -244,8 +244,8 @@ function usual(&$out) {
 	 foreach($device as $val){
 		$datast = SQLSelectOne("SELECT * FROM samsungtv_data WHERE DEVICE_ID = '".(int)$val['ID']."' AND KEY_ID = 'ST'");
 		$datavol = SQLSelectOne("SELECT * FROM samsungtv_data WHERE DEVICE_ID = '".(int)$val['ID']."' AND KEY_ID = 'VOL'");
+		$dataapp = SQLSelectOne("SELECT * FROM samsungtv_data WHERE DEVICE_ID = '".(int)$val['ID']."' AND KEY_ID = 'APP'");
 		if($val['PORT']=='8001' or $val['PORT']=='8002'){
-			$dataapp = SQLSelectOne("SELECT * FROM samsungtv_data WHERE DEVICE_ID = '".(int)$val['ID']."' AND KEY_ID = 'APP'");
 			$volume = $sams->getvol($val['ID']);
 			if(!$volume){
 				if($datast['VALUE']){
@@ -283,7 +283,7 @@ function usual(&$out) {
 							$dataapp['VALUE'] = $valap['TITLE'];
 							$dataapp['UPDATED'] = date('Y-m-d H:i:s');
 							SQLUpdate('samsungtv_data', $dataapp);
-							$this->setProperty($dataapp, $valap['TITLE']);
+							$this->setProperty($dataapp, $dataapp['VALUE']);
 						}
 						$stateget = 0;
 						continue;
@@ -297,6 +297,7 @@ function usual(&$out) {
 		}
 		else{
 			$data = $sams->sget($val['ID']);
+			$app = explode(".", $data['tvChannel']['tvChannelName']['value']);
 			if($data['switch']['switch']['value'] == 'off'){
 				if($datast['VALUE']){
 					$datast['VALUE'] = 0;
@@ -317,6 +318,12 @@ function usual(&$out) {
 				$datavol['UPDATED'] = date('Y-m-d H:i:s');
 				SQLUpdate('samsungtv_data', $datavol);
 				$this->setProperty($datavol, $datavol['VALUE']);
+			}
+			if($dataapp['VALUE'] != $app['1']){
+				$dataapp['VALUE'] = $app['1'];
+				$dataapp['UPDATED'] = date('Y-m-d H:i:s');
+				SQLUpdate('samsungtv_data', $dataapp);
+				$this->setProperty($dataapp, $dataapp['VALUE']);
 			}
 		}
 	}

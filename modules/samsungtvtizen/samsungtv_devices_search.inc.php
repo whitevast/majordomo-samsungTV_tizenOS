@@ -33,9 +33,10 @@
 	   if($res[$i]['PORT'] == '8001' or $res[$i]['PORT'] == '8002'){
 		   $app = SQLSelectOne("SELECT TITLE FROM samsungtv_apps WHERE DEVICE_ID='".$res[$i]['ID']."' AND STATE='1'");
 		   if($app['TITLE'] == '') $app['TITLE'] = "ТВ, HDMI или DLNA";
-	   }else {
-		   $appa = explode(".", $sams->sget($res[$i]['ID'])['tvChannel']['tvChannelName']['value']);
-		   $app['TITLE'] = $appa['1'];// "Нет данных (SmartThings)";
+	   }else{
+		   $app = SQLSelectOne("SELECT VALUE FROM samsungtv_data WHERE DEVICE_ID='".$res[$i]['ID']."' AND KEY_ID = 'APP'");
+		   $appa = $app['VALUE'];
+		   $app['TITLE'] = $appa;
 	   }
 	   $res[$i]['APP'] = $app['TITLE'];
     // some action for every record if required
