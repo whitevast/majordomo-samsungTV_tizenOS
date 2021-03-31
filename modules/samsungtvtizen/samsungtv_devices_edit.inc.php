@@ -165,7 +165,7 @@
     if ($this->mode=='update') {
 	  $old_linked_object=$dtable[$i]['LINKED_OBJECT'];
       $old_linked_property=$dtable[$i]['LINKED_PROPERTY'];
-      global ${'linked_object'.$dtable[$i]['ID']};
+	  global ${'linked_object'.$dtable[$i]['ID']};
       $dtable[$i]['LINKED_OBJECT']=trim(${'linked_object'.$dtable[$i]['ID']});
       global ${'linked_property'.$dtable[$i]['ID']};
       $dtable[$i]['LINKED_PROPERTY']=trim(${'linked_property'.$dtable[$i]['ID']});
@@ -174,7 +174,7 @@
 	  	$dtable[$i]['LINKED_OBJECT'] = '';
 	  }
       SQLUpdate('samsungtv_data', $dtable[$i]);
-      if ($old_linked_object && $old_linked_object!=$dtable[$i]['LINKED_OBJECT'] && $old_linked_property && $old_linked_property!=$dtable[$i]['LINKED_PROPERTY']) {
+      if ($old_linked_object && $old_linked_object!=$dtable[$i]['LINKED_OBJECT'] || $old_linked_property && $old_linked_property!=$dtable[$i]['LINKED_PROPERTY']) {
        removeLinkedProperty($old_linked_object, $old_linked_property, $this->name);
       }
       if ($dtable[$i]['LINKED_OBJECT'] && $dtable[$i]['LINKED_PROPERTY']) {
@@ -230,7 +230,7 @@
           $properties[$i]['LINKED_OBJECT'] = '';
       }
       SQLUpdate('samsungtv_codes', $properties[$i]);
-      if ($old_linked_object && $old_linked_object!=$properties[$i]['LINKED_OBJECT'] && $old_linked_property && $old_linked_property!=$properties[$i]['LINKED_PROPERTY']) {
+      if ($old_linked_object && $old_linked_object!=$properties[$i]['LINKED_OBJECT'] || $old_linked_property && $old_linked_property!=$properties[$i]['LINKED_PROPERTY']) {
        removeLinkedProperty($old_linked_object, $old_linked_property, $this->name);
       }
       if ($properties[$i]['LINKED_OBJECT'] && $properties[$i]['LINKED_PROPERTY']) {
@@ -304,7 +304,7 @@
 	  	$appsdata[$i]['LINKED_OBJECT'] = '';
 	  }
       SQLUpdate('samsungtv_apps', $appsdata[$i]);
-      if ($old_linked_object && $old_linked_object!=$appsdata[$i]['LINKED_OBJECT'] && $old_linked_property && $old_linked_property!=$appsdata[$i]['LINKED_PROPERTY']) {
+      if ($old_linked_object && $old_linked_object!=$appsdata[$i]['LINKED_OBJECT'] || $old_linked_property && $old_linked_property!=$appsdata[$i]['LINKED_PROPERTY']) {
        removeLinkedProperty($old_linked_object, $old_linked_property, $this->name);
       }
       if ($appsdata[$i]['LINKED_OBJECT'] && $appsdata[$i]['LINKED_PROPERTY']) {

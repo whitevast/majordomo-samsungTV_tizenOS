@@ -35,8 +35,8 @@
 		   if($app['TITLE'] == '') $app['TITLE'] = "ТВ, HDMI или DLNA";
 	   }else{
 		   $app = SQLSelectOne("SELECT VALUE FROM samsungtv_data WHERE DEVICE_ID='".$res[$i]['ID']."' AND KEY_ID = 'APP'");
-		   $appa = $app['VALUE'];
-		   $app['TITLE'] = $appa;
+		   $app['TITLE'] = $app['VALUE'];
+		   if($app['TITLE'] == '') $app['TITLE'] = "ТВ, HDMI или DLNA";
 	   }
 	   $res[$i]['APP'] = $app['TITLE'];
     // some action for every record if required

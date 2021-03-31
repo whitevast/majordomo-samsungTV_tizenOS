@@ -1,18 +1,4 @@
-[#if VIEW_MODE="show_help"#]
-   <h4>Справка</h4>
-[#else#]
-   <div>
-      <table border="0" cellpadding="8">
-         <tr>
-            <td rowspan="2" style="width:65px">
-               <img src="../templates/lgwebostv/logo.png" height="32px">
-            </td>
-            <td style="height:33px;vertical-align:middle">IP: <b>[#IP#]</b></td>
-            <td style="height:33px;vertical-align:middle">Системный ID: <span class="badge">[#ID#]</span></td>
-         </tr>
-      </table>
-   </div>
-[#endif#]
+  <h4>Справка</h4>
 <div class="panel-group" id="accordion" style="width:98%">
    <div class="panel panel-info">
       <div class="panel-heading">
@@ -52,7 +38,7 @@
             <p>Модуль реализует классическую концепцию <strong>MajorDoMo</strong> для взаимодействия с пользователем через привязанные к определенным командам или приложениям <strong>свойства </strong> объекта. Объекты и свойства создаются пользователем самостоятельно. В модуле уже добавлены основные команды управления телевизором, но вы можете добавить свою. Список доступных команд см. ниже</p>
 			<p>В модуле имеется цикл, который раз в 10 секунд опрашивает состояние ТВ, а именно определяет, какое приложение запущено в данный момент, и запрашивает уровень громкости.</p>
          </div>
-      </div
+      </div>
    </div>
    <div class="panel panel-info">
       <div class="panel-heading">
@@ -1387,6 +1373,7 @@
          </div>
       </div>
    </div>
+</div>
 <br>
 <div>
    <a href="?data_source=<#DATA_SOURCE#>" class="btn btn-default"><#LANG_STRING_BACK#></a>

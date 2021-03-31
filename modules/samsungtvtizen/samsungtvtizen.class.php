@@ -125,7 +125,7 @@ function run() {
 * @access public
 */
 function admin(&$out) {
-	    if ((time() - gg('cycle_samsungtvtizenRun')) < 10 ) {
+	    if ((time() - gg('cycle_samsungtvtizenRun')) < 30 ) {
 			$out['CYCLERUN'] = 1;
 		} else {
 			$out['CYCLERUN'] = 0;
@@ -237,8 +237,6 @@ function usual(&$out) {
 
  function processCycle() {
 	 $stateget = 1;
-	 $this->getConfig();
-	 $this->debug = ($this->config['LOG_DEBMES'] == 1) ? true : false;
 	 $sams = new samsung($this->debug);
 	 $device = SQLSelect("SELECT * FROM samsungtv_devices");
 	 foreach($device as $val){
@@ -298,6 +296,8 @@ function usual(&$out) {
 		else{
 			$data = $sams->sget($val['ID']);
 			$app = explode(".", $data['tvChannel']['tvChannelName']['value']);
+			if($app == null) $app = '';
+			if($data['switch']['switch']['value'] == '') continue;
 			if($data['switch']['switch']['value'] == 'off'){
 				if($datast['VALUE']){
 					$datast['VALUE'] = 0;
@@ -374,6 +374,7 @@ function setProperty($line, $value){
 					elseif($key['VALUE'] == "KEY_POWER"){
 						$status = SQLSelectOne('SELECT VALUE FROM samsungtv_data WHERE DEVICE_ID ="'.(int)$key['DEVICE_ID'].'" and KEY_ID = "ST"');
 						if(($value and !$status['VALUE']) or (!$value and $status['VALUE'])) $sams->sendkey($key['DEVICE_ID'], $key['VALUE']);
+						writeLog("Команда: ".$value.", Статус: ".$status['VALUE']);
 					}
 					elseif($key['VALUE'] == "KEY_SETVOL"){
 						$sams->setvol($key['DEVICE_ID'], $value);
