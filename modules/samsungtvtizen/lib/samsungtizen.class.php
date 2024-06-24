@@ -121,6 +121,8 @@ class samsung{
 		else if($command == 'close') curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE'); //закрыть
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_HEADER, false);
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 5);
 		$html = curl_exec($ch);
 		curl_close($ch);
 		if (!$html)	return false;		
@@ -159,6 +161,8 @@ class samsung{
 		</s:Envelope>');
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_HEADER, false);
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 5);
 		$html = curl_exec($ch);
 		if (!$html)	return false;
 		curl_close($ch);
@@ -275,6 +279,8 @@ class samsung{
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_HEADER, false);
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 5);
 		$data = curl_exec($ch);
 		if (!$data)	return false;
 		curl_close($ch);

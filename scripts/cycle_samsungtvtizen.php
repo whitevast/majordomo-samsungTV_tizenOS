@@ -21,7 +21,7 @@ $checkEvery=10; // poll every 5 seconds
 $timeUpdate = 0;
 while (1)
 {
-   if(time() - $timeUpdate > 20){
+   if(time() - $timeUpdate > 15){
      setGlobal((str_replace('.php', '', basename(__FILE__))) . 'Run', time(), 1);
 	 $timeUpdate = time();
    }

@@ -150,7 +150,7 @@
    //dataset2
    $new_id=0;
     if ($this->mode=='update') {
-    global $title_new;
+    $title_new = gr('title_new');
 	if ($title_new) {
 	 $prop=array('TITLE'=>$title_new,'DEVICE_ID'=>$rec['ID']);
 	 $new_id=SQLInsert('samsungtv_data',$prop);
@@ -161,7 +161,7 @@
    $total=count($dtable);
    for($i=0;$i<$total;$i++) {
     if ($dtable[$i]['ID']==$new_id) continue;
-	if ($test_id) continue; 
+	//if ($test_id) continue; 
     if ($this->mode=='update') {
 	  $old_linked_object=$dtable[$i]['LINKED_OBJECT'];
       $old_linked_property=$dtable[$i]['LINKED_PROPERTY'];
@@ -191,20 +191,20 @@
    //dataset2
    $new_id=0;
     if ($this->mode=='update') {
-    global $title_new;
+    $title_new = gr('title_new');
 	if ($title_new) {
 	 $prop=array('TITLE'=>$title_new,'DEVICE_ID'=>$rec['ID']);
 	 $new_id=SQLInsert('samsungtv_codes',$prop);
 	}
    }
-   global $delete_id;
+   $delete_id = gr('delete_id');
    if ($delete_id) {
 	$properties=SQLSelectOne("SELECT * FROM samsungtv_codes WHERE ID='".(int)$delete_id."'");
     if ($properties['LINKED_PROPERTY']) removeLinkedProperty($properties['LINKED_OBJECT'], $properties['LINKED_PROPERTY'], $this->name);
 	SQLExec("DELETE FROM samsungtv_codes WHERE ID='".(int)$delete_id."'");
    }
    
-   global $test_id;
+   $test_id = gr('test_id');
    if ($test_id) {
 		$key = SQLSelectOne("SELECT * FROM samsungtv_codes WHERE ID='".(int)$test_id."'")['VALUE'];
 		if($rec["PORT"]=='8001' or $rec["PORT"]=='8002') $sams->sendkey($rec["ID"], $key);
@@ -247,32 +247,32 @@
    //dataset2
    $new_id=0;
    if ($this->mode=='update') {
-    global $title_new;
+    $title_new=gr('title_new');
 	if ($title_new) {
 	 $prop=array('TITLE'=>$title_new,'DEVICE_ID'=>$rec['ID']);
 	 $new_id=SQLInsert('samsungtv_apps',$prop);
 	}
    }
-   global $delete_id;
+   $delete_id =gr('delete_id');
    if ($delete_id) {
 	$properties=SQLSelectOne("SELECT * FROM samsungtv_apps WHERE ID='".(int)$delete_id."'");
     if ($properties['LINKED_PROPERTY']) removeLinkedProperty($properties['LINKED_OBJECT'], $properties['LINKED_PROPERTY'], $this->name); //если есть привязанное свойство - удаляем привязку
     SQLExec("DELETE FROM samsungtv_apps WHERE ID='".(int)$delete_id."'");
    }
-   global $start_id;
+   $start_id = gr('start_id');
    if ($start_id) {
     $id = SQLSelectOne("SELECT * FROM samsungtv_apps WHERE ID='".(int)$start_id."'")['APPID'];
 	$sams->appmgnt($rec["ID"], $id, "start");
 	$this->redirect("?data_source=&view_mode=edit_samsungtv_devices&id=".$rec['ID']."&tab=apps");
    }
-   global $close_id;
+   $close_id = gr('close_id');
    if ($close_id) {
     $id = SQLSelectOne("SELECT * FROM samsungtv_apps WHERE ID='".(int)$close_id."'")['APPID'];
 	$sams->appmgnt($rec["ID"], $id, "close");
 	$this->redirect("?data_source=&view_mode=edit_samsungtv_devices&id=".$rec['ID']."&tab=apps");
    }
    
-    global $update_id;
+    $update_id = gr('update_id');
 	if ($update_id) {
 		$id = SQLSelect("SELECT * FROM samsungtv_apps WHERE ID='".$rec['ID']."'");
 		$wsdata = $sams->getapps($rec['ID']);

@@ -125,7 +125,7 @@ function run() {
 * @access public
 */
 function admin(&$out) {
-	    if ((time() - gg('cycle_samsungtvtizenRun')) < 30 ) {
+	    if ((time() - (int)gg('cycle_samsungtvtizenRun')) < 30 ) {
 			$out['CYCLERUN'] = 1;
 		} else {
 			$out['CYCLERUN'] = 0;
@@ -140,7 +140,7 @@ function admin(&$out) {
    $this->saveConfig();
    $this->redirect("?");
  }
- if (isset($this->data_source) && !$_GET['data_source'] && !$_POST['data_source']) {
+ if (isset($this->data_source) && !isset($_GET['data_source']) && !isset($_POST['data_source'])) {
   $out['SET_DATASOURCE']=1;
  }
  if ($this->data_source=='samsungtv_devices' || $this->data_source=='') {
@@ -148,15 +148,12 @@ function admin(&$out) {
    $this->search_samsungtv_devices($out);
   }
   if ($this->view_mode=='edit_samsungtv_devices') {
-   $this->edit_samsungtv_devices($out, $this->id);
+   $this->edit_samsungtv_devices($out, $this->id ?? '');
   }
   if ($this->view_mode=='delete_samsungtv_devices') {
    $this->delete_samsungtv_devices($this->id);
    $this->redirect("?data_source=samsungtv_devices");
   }
- }
- if (isset($this->data_source) && !$_GET['data_source'] && !$_POST['data_source']) {
-  $out['SET_DATASOURCE']=1;
  }
  if ($this->data_source=='samsungtv_codes') {
   if ($this->view_mode=='' || $this->view_mode=='search_samsungtv_codes') {
@@ -261,7 +258,7 @@ function usual(&$out) {
 				$this->setProperty($datast, $datast['VALUE']);
 				//При включении подключаемся к ТВ, чтобы токен не устаревал
 				$socket = $sams->connecttv($val['IP'], $val['PORT'], $val['TOKEN']);
-				fclose($socket);
+				if($soket) fclose($socket);
 			}
 			if($datavol['VALUE'] != $volume){
 				$datavol['VALUE'] = $volume;
@@ -274,7 +271,7 @@ function usual(&$out) {
 				if($stateget){
 					$state = $sams->appmgnt($val['ID'], $valap['APPID']);
 					$state = json_decode($state, true);
-					if($state['visible']){
+					if(isset($state['visible'])){
 						if($valap['STATE'] != 1){
 							$valap['STATE'] = 1;
 							SQLUpdate('samsungtv_apps', $valap);
@@ -296,7 +293,6 @@ function usual(&$out) {
 		else{
 			$data = $sams->sget($val['ID']);
 			$app = explode(".", $data['tvChannel']['tvChannelName']['value']);
-			if($app == null) $app = '';
 			if($data['switch']['switch']['value'] == '') continue;
 			if($data['switch']['switch']['value'] == 'off'){
 				if($datast['VALUE']){
@@ -320,6 +316,7 @@ function usual(&$out) {
 				$this->setProperty($datavol, $datavol['VALUE']);
 			}
 			if($dataapp['VALUE'] != $app['1']){
+				if(!$app['1']) continue;
 				$dataapp['VALUE'] = $app['1'];
 				$dataapp['UPDATED'] = date('Y-m-d H:i:s');
 				SQLUpdate('samsungtv_data', $dataapp);
@@ -374,7 +371,7 @@ function setProperty($line, $value){
 					elseif($key['VALUE'] == "KEY_POWER"){
 						$status = SQLSelectOne('SELECT VALUE FROM samsungtv_data WHERE DEVICE_ID ="'.(int)$key['DEVICE_ID'].'" and KEY_ID = "ST"');
 						if(($value and !$status['VALUE']) or (!$value and $status['VALUE'])) $sams->sendkey($key['DEVICE_ID'], $key['VALUE']);
-						writeLog("Команда: ".$value.", Статус: ".$status['VALUE']);
+						$this->writeLog("Команда: ".$value.", Статус: ".$status['VALUE']);
 					}
 					elseif($key['VALUE'] == "KEY_SETVOL"){
 						$sams->setvol($key['DEVICE_ID'], $value);

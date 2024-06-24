@@ -32,7 +32,7 @@
 	   }
 	   if($res[$i]['PORT'] == '8001' or $res[$i]['PORT'] == '8002'){
 		   $app = SQLSelectOne("SELECT TITLE FROM samsungtv_apps WHERE DEVICE_ID='".$res[$i]['ID']."' AND STATE='1'");
-		   if($app['TITLE'] == '') $app['TITLE'] = "ТВ, HDMI или DLNA";
+		   if(!isset($app['TITLE']) or $app['TITLE'] == '') $app['TITLE'] = "ТВ, HDMI или DLNA";
 	   }else{
 		   $app = SQLSelectOne("SELECT VALUE FROM samsungtv_data WHERE DEVICE_ID='".$res[$i]['ID']."' AND KEY_ID = 'APP'");
 		   $app['TITLE'] = $app['VALUE'];
